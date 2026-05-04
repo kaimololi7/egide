@@ -1,0 +1,230 @@
+id: cluster:management-review
+label_fr: "Revue de direction"
+label_en: "Management review"
+category: governance
+priority: 9
+
+description_fr: |
+  Revue formelle par la direction de la performance du SMQ/SMSI, des risques,
+  des opportunités d'amélioration. Couvre ISO 9001:2026 Clause 9.3, ISO 27001:2022
+  Clause 9.3, NIS2 Art. 20 (cybersecurity governance — management body).
+
+description_en: |
+  Formal management review of QMS/ISMS performance, risks, improvement
+  opportunities. Covers ISO 9001:2026 Clause 9.3, ISO 27001:2022 Clause 9.3,
+  NIS2 Art. 20 (cybersecurity governance — management body).
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 9.3.1"
+    weight: 1.0
+    objective: "Top management shall review the organization's QMS at planned intervals"
+
+  - framework: iso9001-2026
+    ref: "Clause 9.3.2"
+    weight: 1.0
+    objective: "Management review inputs — status of actions, changes, performance, audit results, customer satisfaction, etc."
+
+  - framework: iso9001-2026
+    ref: "Clause 9.3.3"
+    weight: 1.0
+    objective: "Management review outputs — opportunities for improvement, changes needed, resource needs"
+
+  - framework: iso27001-2022
+    ref: "Clause 9.3.1"
+    weight: 1.0
+    objective: "Top management shall review the ISMS at planned intervals"
+
+  - framework: iso27001-2022
+    ref: "Clause 9.3.2"
+    weight: 1.0
+    objective: "Management review inputs — feedback, audit results, fulfillment of objectives, etc."
+
+  - framework: iso27001-2022
+    ref: "Clause 9.3.3"
+    weight: 1.0
+    objective: "Management review results — decisions related to continual improvement"
+
+  - framework: nis2
+    ref: Art.20
+    weight: 1.0
+    obligation_fr: "Les organes de direction des entités essentielles et importantes approuvent les mesures de gestion des risques en matière de cybersécurité, en surveillent la mise en œuvre, et peuvent être tenus responsables des manquements."
+
+strictest_rules:
+  annual_cadence_minimum:
+    rule: "Management review held ≥ annually; semestrial recommended for ISO 27001 ISMS first-year"
+    source: "iso9001-2026:Clause 9.3.1 + iso27001-2022:Clause 9.3.1"
+
+  mandatory_inputs:
+    rule: "All mandatory inputs covered: actions from previous reviews, changes, KPI performance, audit results, customer feedback, risks, opportunities"
+    source: "iso9001-2026:Clause 9.3.2 + iso27001-2022:Clause 9.3.2"
+
+  documented_outputs:
+    rule: "Outputs documented: decisions on improvement, changes, resources; minutes archived"
+    source: "iso9001-2026:Clause 9.3.3 + iso27001-2022:Clause 9.3.3"
+
+  management_body_attendance:
+    rule: "Management body attends and approves cybersecurity measures (NIS2 Art. 20)"
+    source: "nis2:Art.20"
+
+  actions_tracked:
+    rule: "Action items from review tracked to closure; status in next review"
+    source: "iso9001-2026:Clause 9.3.3 (continual)"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de revue de direction"
+      title_en: "Management review policy"
+      covers:
+        - "iso9001-2026:Clause 9.3.1"
+        - "iso9001-2026:Clause 9.3.2"
+        - "iso9001-2026:Clause 9.3.3"
+        - "iso27001-2022:Clause 9.3.1"
+        - "iso27001-2022:Clause 9.3.2"
+        - "iso27001-2022:Clause 9.3.3"
+        - "nis2:Art.20"
+      scope: "QMS, ISMS, and broader cybersecurity governance"
+      principles_fr:
+        - "La revue de direction est tenue au minimum annuellement (semestriellement pour ISMS en année 1)"
+        - "Les inputs obligatoires des deux normes sont systématiquement couverts"
+        - "L'organe de direction approuve les mesures cybersécurité (NIS2 Art. 20)"
+        - "Les outputs (décisions) sont documentés et tracés"
+        - "Les actions issues de la revue sont suivies jusqu'à clôture"
+        - "Le compte-rendu est archivé pour audit (rétention ≥ 7 ans)"
+      raci:
+        accountable: "Direction Générale (CEO/COO)"
+        responsible: ["Responsable Qualité", "RSSI", "Secrétaire de séance"]
+        consulted: ["Process Owners", "Audit Manager"]
+        informed: ["All staff (key decisions)", "Auditeur externe"]
+      numerical_commitments:
+        - metric: "Cadence revue de direction"
+          target: "≥ 1/an (idéal 2/an pour ISMS jeune)"
+        - metric: "% inputs obligatoires couverts par revue"
+          target: "100%"
+        - metric: "% actions clôturées avant revue suivante"
+          target: "≥ 80%"
+        - metric: "Délai diffusion compte-rendu"
+          target: "≤ 15 jours après revue"
+
+  procedures:
+    - title_fr: "Procédure de préparation et tenue de la revue de direction"
+      title_en: "Management review preparation and conduct procedure"
+      derived_from: "Politique de revue de direction"
+      steps:
+        - id: S1
+          actor: "Responsable Qualité + RSSI"
+          action: "Planifier la revue (date, agenda, participants)"
+          input: "Calendrier annuel + dernière revue"
+          output: "Convocation + agenda diffusé"
+          sla: "≥ 30 jours avant revue"
+        - id: S2
+          actor: "Responsable Qualité + RSSI"
+          action: "Collecter les inputs obligatoires (KPI, NCs, audits, risques, customer feedback)"
+          output: "Dossier de revue (data pack)"
+          sla: "≤ 10 jours avant revue"
+        - id: S3
+          actor: "Process Owners"
+          action: "Préparer leurs présentations (performance + axes d'amélioration)"
+          sla: "≤ 5 jours avant revue"
+        - id: S4
+          actor: "Direction"
+          action: "Tenir la revue selon agenda"
+          input: "Dossier de revue + présentations"
+          sla: "Selon durée prévue (typiquement 2-4h)"
+        - id: S5
+          actor: "Direction"
+          action: "Approuver les mesures cybersécurité (NIS2 Art. 20 explicite)"
+          output: "Décisions actées dans le compte-rendu"
+          sla: "Pendant S4"
+        - id: S6
+          actor: "Direction"
+          action: "Décider des actions d'amélioration et allocation ressources"
+          output: "Liste actions avec owners et délais"
+          sla: "Pendant S4"
+        - id: S7
+          actor: "Secrétaire de séance"
+          action: "Rédiger et diffuser le compte-rendu"
+          output: "PV signé + actions attribuées"
+          sla: "≤ 15 jours après revue"
+        - id: S8
+          actor: "Action owners"
+          action: "Mettre en œuvre les actions et reporter"
+          sla: "Selon délais individuels"
+        - id: S9
+          actor: "Responsable Qualité"
+          action: "Suivre clôture des actions et préparer revue suivante"
+          sla: "Continu"
+
+      decision_points: []
+
+  bpmn:
+    - title: "Workflow Management Review Cycle"
+      start_event: "Date prévue revue annuelle"
+      end_events: ["Compte-rendu signé + actions distribuées", "Revue annulée/reportée (cas exceptionnel)"]
+      lanes:
+        - "Direction"
+        - "Responsable Qualité"
+        - "RSSI"
+        - "Process Owners"
+        - "Secrétaire"
+      tasks_count: 9
+      gateway_count: 0
+      timer_events: ["T-30j convocation", "T+15j compte-rendu"]
+
+  kpis:
+    - id: KPI-MGT-01
+      title_fr: "Taux de tenue revue annuelle"
+      target: "100%"
+      unit: percent
+      # Thresholds: binary KPI; instead use lateness measure on KPI-MGT-04
+      source_event: "Calendar + minutes archive"
+      measurement_frequency: annual
+      pdca_loop:
+        plan: "Calendrier prévu Q4 N-1"
+        do: "Tenue effective"
+        check: "Annuel — vérification existence + qualité minutes"
+        act: "If miss → escalation board + audit risk"
+
+    - id: KPI-MGT-02
+      title_fr: "% inputs obligatoires couverts"
+      target: "100%"
+      unit: percent
+      source_event: "Minutes content vs checklist"
+      measurement_frequency: per_review
+
+    - id: KPI-MGT-03
+      title_fr: "% actions clôturées avant revue suivante"
+      target: "≥ 80%"
+      unit: percent
+      threshold_yellow: 70
+      threshold_red: 60
+      source_event: "Action register"
+      measurement_frequency: per_review_cycle
+
+    - id: KPI-MGT-04
+      title_fr: "Délai diffusion compte-rendu"
+      target: "≤ 15 jours"
+      unit: days
+      source_event: "Minutes draft → distribution"
+      measurement_frequency: per_review
+
+audit_readiness:
+  iso9001-2026:
+    - "Management review minutes archived (Clause 9.3.3)"
+    - "All mandatory inputs covered (Clause 9.3.2)"
+    - "Outputs documented with decisions"
+  iso27001-2022:
+    - "ISMS performance reviewed (Clause 9.3)"
+    - "ISMS objectives fulfillment evaluated"
+    - "Resource allocation decisions tracked"
+  nis2:
+    - "Management body approved cybersecurity measures (Art. 20)"
+    - "Personal accountability of board members documented (sanctions risk)"
+    - "Cybersecurity training of management body referenced"
+
+conflict_resolutions:
+  - issue: "ISO 9001 and ISO 27001 management reviews can be combined"
+    resolution: "Combined session recommended; agenda explicitly tags QMS items, ISMS items, and combined items"
+
+  - issue: "NIS2 Art. 20 requires management body approval; ISO doesn't specify which exact level"
+    resolution: "Management body = highest decision-making body of the entity (board or executive committee); explicit attendance recorded"

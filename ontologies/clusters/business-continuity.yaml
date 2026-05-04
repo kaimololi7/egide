@@ -1,0 +1,233 @@
+id: cluster:business-continuity
+label_fr: "Continuité d'activité"
+label_en: "Business continuity"
+category: operational
+priority: 6
+
+description_fr: |
+  Préservation de la capacité à fournir les services et produits en cas
+  d'incident majeur ou de crise. Couvre ISO 9001:2026 Clause 8.1 (operational
+  planning), ISO 27001:2022 A.5.30 (ICT readiness for business continuity),
+  NIS2 Art. 21.2.c (continuité des activités).
+
+description_en: |
+  Preservation of ability to deliver services and products during major incidents
+  or crises. Covers ISO 9001:2026 Clause 8.1, ISO 27001:2022 A.5.30, NIS2 Art.
+  21.2.c.
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 8.1"
+    weight: 0.8
+    objective: "Operational planning and control — plan, implement and control processes needed to meet requirements"
+
+  - framework: iso9001-2026
+    ref: "Clause 6.1"
+    weight: 0.6
+    objective: "Risks and opportunities — including continuity-related risks"
+
+  - framework: iso27001-2022
+    ref: A.5.30
+    weight: 1.0
+    objective: "ICT readiness for business continuity — plans for ICT to support business continuity"
+
+  - framework: iso27001-2022
+    ref: A.5.29
+    weight: 0.9
+    objective: "Information security during disruption — maintain information security during disruption"
+
+  - framework: iso27001-2022
+    ref: A.8.13
+    weight: 0.8
+    objective: "Information backup — copies of information taken and tested regularly"
+
+  - framework: iso27001-2022
+    ref: A.8.14
+    weight: 0.7
+    objective: "Redundancy of information processing facilities — redundancy of facilities sufficient to meet availability requirements"
+
+  - framework: nis2
+    ref: Art.21.2.c
+    weight: 1.0
+    obligation_fr: "Continuité des activités, telle que la gestion des sauvegardes et la reprise des activités, et gestion des crises."
+
+strictest_rules:
+  rto_rpo_defined:
+    rule: "Recovery Time Objective (RTO) and Recovery Point Objective (RPO) defined per critical process"
+    source: "iso27001-2022:A.5.30 + iso27001-2022:A.8.13"
+
+  bcp_tested_annually:
+    rule: "Business Continuity Plan tested at minimum annually with realistic scenarios"
+    source: "iso27001-2022:A.5.30 (test plans)"
+
+  backup_tested:
+    rule: "Backups tested for restorability ≥ quarterly; full recovery test annual"
+    source: "iso27001-2022:A.8.13"
+
+  crisis_team_designated:
+    rule: "Crisis management team designated with substitute roles documented"
+    source: "iso27001-2022:A.5.30 + nis2:Art.21.2.c"
+
+  bia_documented:
+    rule: "Business Impact Analysis (BIA) documented and reviewed annually"
+    source: "iso27001-2022:A.5.30 (impact analysis)"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de continuité d'activité (BCM)"
+      title_en: "Business continuity management policy"
+      covers:
+        - "iso9001-2026:Clause 8.1"
+        - "iso27001-2022:A.5.30"
+        - "iso27001-2022:A.5.29"
+        - "iso27001-2022:A.8.13"
+        - "iso27001-2022:A.8.14"
+        - "nis2:Art.21.2.c"
+      scope: "All critical business processes and supporting ICT infrastructure"
+      principles_fr:
+        - "Chaque processus critique a un RTO et un RPO documentés et validés par la direction"
+        - "Les sauvegardes sont testées pour restauration au minimum trimestriellement"
+        - "Le BCP est testé annuellement avec un scénario réaliste"
+        - "Une équipe de gestion de crise est désignée avec rôles de substitution"
+        - "Une BIA (Business Impact Analysis) est documentée et revue annuellement"
+        - "L'information sensible reste protégée pendant les disruptions (A.5.29)"
+      raci:
+        accountable: "Direction (CEO/COO)"
+        responsible: ["Business Continuity Manager", "RSSI", "DSI"]
+        consulted: ["Process Owners", "Legal"]
+        informed: ["Auditeur", "Régulateur (NIS2)"]
+      numerical_commitments:
+        - metric: "Test BCP annuel"
+          target: "100% des processus critiques testés ≥ 1 fois/an"
+        - metric: "Test restauration sauvegardes"
+          target: "Trimestriel (test partiel) + annuel (full restore)"
+        - metric: "Délai d'activation cellule de crise"
+          target: "≤ 1h après déclenchement"
+        - metric: "Taux de réussite tests sauvegarde"
+          target: "≥ 95%"
+
+  procedures:
+    - title_fr: "Procédure de gestion de crise et activation BCP"
+      title_en: "Crisis management and BCP activation procedure"
+      derived_from: "Politique de continuité d'activité"
+      steps:
+        - id: S1
+          actor: "Détecteur (SOC, ops, alerte externe)"
+          action: "Détecter et qualifier une situation de crise potentielle"
+          input: "Événement majeur (incident sécurité, panne, sinistre)"
+          output: "Alerte crise au Crisis Manager"
+          sla: "≤ 30 min après détection"
+        - id: S2
+          actor: "Crisis Manager"
+          action: "Évaluer si activation cellule de crise nécessaire"
+          output: "Décision activation/non-activation"
+          sla: "≤ 15 min après S1"
+        - id: S3
+          actor: "Crisis Manager"
+          action: "Activer la cellule de crise et communiquer"
+          output: "Cellule de crise activée + canal communication"
+          sla: "≤ 1h après S2"
+        - id: S4
+          actor: "Cellule de crise"
+          action: "Évaluer impact (BIA dynamique) et déclencher BCP/DRP"
+          input: "BIA + plans BCP/DRP préétablis"
+          output: "Plan d'action immédiat"
+          sla: "≤ 2h après S3"
+        - id: S5
+          actor: "Équipes opérationnelles"
+          action: "Mettre en œuvre les actions BCP/DRP"
+          sla: "Selon RTO par processus"
+        - id: S6
+          actor: "Cellule de crise (Communication)"
+          action: "Communiquer aux parties prenantes (clients, autorités, salariés)"
+          sla: "Selon plan communication"
+        - id: S7
+          actor: "Cellule de crise"
+          action: "Suivre la progression et réviser plan si nécessaire"
+          sla: "Continu pendant crise"
+        - id: S8
+          actor: "Direction"
+          action: "Déclarer la fin de crise et lancer REX"
+          output: "REX + plan d'amélioration"
+          sla: "Sous 30 jours après fin crise"
+
+      decision_points:
+        - id: DP1
+          location: "Après S2"
+          condition: "Crise active confirmée ?"
+          if_yes: "Activer cellule (S3)"
+          if_no: "Traiter en incident standard"
+
+  bpmn:
+    - title: "Workflow Crisis Management & BCP"
+      start_event: "Événement majeur détecté"
+      end_events: ["Crise clôturée + REX archivé", "Faux positif documenté"]
+      lanes:
+        - "Détecteur"
+        - "Crisis Manager"
+        - "Cellule de crise"
+        - "Équipes opérationnelles"
+        - "Direction"
+      tasks_count: 8
+      gateway_count: 1
+      timer_events: ["T+30min qualification", "T+1h activation", "T+RTO recovery"]
+
+  kpis:
+    - id: KPI-BCM-01
+      title_fr: "% processus critiques avec BCP testé < 12 mois"
+      target: "100%"
+      unit: percent
+      threshold_yellow: 90
+      threshold_red: 80
+      source_event: "BCP test register"
+      measurement_frequency: quarterly
+      pdca_loop:
+        plan: "Annual BCP test schedule"
+        do: "Run scheduled tests"
+        check: "Quarterly review at risk committee"
+        act: "If <90% → escalation BCM Manager + remediation plan"
+
+    - id: KPI-BCM-02
+      title_fr: "Taux de réussite tests restauration sauvegardes"
+      target: "≥ 95%"
+      unit: percent
+      threshold_yellow: 90
+      threshold_red: 85
+      source_event: "Backup test logs"
+      measurement_frequency: quarterly
+
+    - id: KPI-BCM-03
+      title_fr: "Délai moyen activation cellule de crise (test ou réel)"
+      target: "≤ 1h"
+      unit: minutes
+      source_event: "Crisis log timestamps"
+      measurement_frequency: per_event
+
+    - id: KPI-BCM-04
+      title_fr: "% écart RTO réel vs RTO cible (sur tests)"
+      target: "≤ 10% écart négatif"
+      unit: percent
+      source_event: "BCP test metrics"
+      measurement_frequency: per_test
+
+audit_readiness:
+  iso9001-2026:
+    - "Operational planning evidences continuity considerations"
+    - "Risks related to continuity addressed in risk register"
+  iso27001-2022:
+    - "ICT readiness plans documented (A.5.30)"
+    - "Backup procedures + test logs (A.8.13)"
+    - "Information security during disruption documented (A.5.29)"
+    - "BIA dated < 12 months"
+    - "Annual BCP test minutes archived"
+  nis2:
+    - "Crisis management procedure tested ≥ annually"
+    - "Backup tested with restorability proof"
+    - "Communication plan with authorities (CSIRT-FR) ready"
+
+conflict_resolutions:
+  - issue: "ISO 22301 (BCM dedicated standard) is referenced by ISO 27001 A.5.30 but not mandatory for ISO 9001"
+    resolution: "Adopt ISO 22301 structure (BIA → BCP → DRP) as canonical; ISO 9001 satisfied via Clause 8.1"
+
+  - issue: "RTO/RPO definitions vary by source (NIS2 doesn't impose values; ISO 27001 implies need)"
+    resolution: "Define organization-specific RTO/RPO matrix per process criticality (P1=4h, P2=24h, P3=72h baseline)"

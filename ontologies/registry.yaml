@@ -1,0 +1,60 @@
+# Egide — Cross-framework normative registry
+# Top-level entry. Each cluster groups conceptually-equivalent requirements
+# across ISO 9001:2026, ISO 27001:2022, NIS2, DORA, ITIL 4, HDS, and others.
+#
+# Curation order is bootstrap-driven: 10 clusters covering ~90% of typical
+# pyramid scope. Migrated from process-pyramid 2026-05-04 unchanged; long-tail
+# framework-specific items will be added as new clusters in M2+.
+
+version: "0.2.0"
+last_updated: "2026-05-04"
+
+frameworks:
+  iso27001-2022:
+    title: "ISO/IEC 27001:2022"
+    short: "ISO 27001"
+    license: "Copyright ISO/IEC. References only; no verbatim text bundled."
+    version: "2022"
+    locale_default: "en"
+    locale_supported: ["en", "fr"]
+
+  iso9001-2026:
+    title: "ISO 9001:2026 (FDIS)"
+    short: "ISO 9001"
+    license: "Copyright ISO. References only; no verbatim text bundled."
+    version: "2026 (FDIS)"
+    locale_default: "en"
+    locale_supported: ["en", "fr"]
+
+  nis2:
+    title: "Directive (UE) 2022/2555 — NIS2"
+    short: "NIS2"
+    license: "Public — EUR-Lex. Verbatim quotes allowed for EU regulation."
+    version: "2022-12-14"
+    locale_default: "fr"
+    locale_supported: ["fr", "en"]
+
+# Cluster index (curation order = bootstrap priority)
+cluster_order:
+  - cluster:incident-management
+  - cluster:change-management
+  - cluster:risk-management
+  - cluster:document-control
+  - cluster:awareness-training
+  - cluster:business-continuity
+  - cluster:supplier-management
+  - cluster:internal-audit
+  - cluster:management-review
+  - cluster:continual-improvement
+
+clusters:
+  - $ref: "./clusters/incident-management.yaml"
+  - $ref: "./clusters/change-management.yaml"
+  - $ref: "./clusters/risk-management.yaml"
+  - $ref: "./clusters/document-control.yaml"
+  - $ref: "./clusters/awareness-training.yaml"
+  - $ref: "./clusters/business-continuity.yaml"
+  - $ref: "./clusters/supplier-management.yaml"
+  - $ref: "./clusters/internal-audit.yaml"
+  - $ref: "./clusters/management-review.yaml"
+  - $ref: "./clusters/continual-improvement.yaml"

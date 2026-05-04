@@ -1,0 +1,241 @@
+id: cluster:risk-management
+label_fr: "Gestion des risques"
+label_en: "Risk management"
+category: organizational
+priority: 3
+
+description_fr: |
+  Identification, analyse, évaluation, traitement et surveillance des risques
+  affectant l'organisation. Couvre les exigences cybersécurité (ISO 27001 Clause 6
+  + A.5.7), qualité opérationnelle (ISO 9001:2026 Clause 6.1), et obligation
+  réglementaire EU (NIS2 Art. 21.2.a).
+
+description_en: |
+  Identification, analysis, evaluation, treatment, and monitoring of risks
+  affecting the organization. Covers cybersecurity (ISO 27001 Clause 6 + A.5.7),
+  quality operations (ISO 9001:2026 Clause 6.1), and EU regulatory obligations
+  (NIS2 Art. 21.2.a).
+
+framework_anchors:
+  - framework: iso27001-2022
+    ref: "Clause 6.1.2"
+    weight: 1.0
+    objective: "Information security risk assessment — define and apply a risk assessment process"
+
+  - framework: iso27001-2022
+    ref: "Clause 6.1.3"
+    weight: 1.0
+    objective: "Information security risk treatment — define and apply a risk treatment process"
+
+  - framework: iso27001-2022
+    ref: A.5.7
+    weight: 0.9
+    objective: "Threat intelligence — collect and analyse information relating to information security threats"
+
+  - framework: iso27001-2022
+    ref: A.5.13
+    weight: 0.7
+    objective: "Labelling of information — develop and implement procedures for labelling"
+
+  - framework: iso9001-2026
+    ref: "Clause 6.1"
+    weight: 1.0
+    objective: "Actions to address risks and opportunities — determine risks and opportunities to be addressed"
+
+  - framework: iso9001-2026
+    ref: "Clause 6.1.1"
+    weight: 1.0
+    objective: "Define risks and opportunities determining the QMS context"
+
+  - framework: iso9001-2026
+    ref: "Clause 6.1.2"
+    weight: 0.9
+    objective: "Plan actions to address risks and opportunities + integrate into QMS"
+
+  - framework: nis2
+    ref: Art.21.2.a
+    weight: 1.0
+    obligation_fr: "Politiques relatives à l'analyse des risques et à la sécurité des systèmes d'information."
+
+  - framework: nis2
+    ref: Art.21.1
+    weight: 0.9
+    obligation_fr: "Mesures techniques, opérationnelles et organisationnelles appropriées et proportionnées pour gérer les risques pesant sur la sécurité des réseaux et des systèmes d'information."
+
+strictest_rules:
+  risk_register_mandatory:
+    rule: "Maintain a documented risk register with identified risks, owners, and treatment status"
+    source: "iso27001-2022:Clause 6.1.2 + iso9001-2026:Clause 6.1.1"
+
+  annual_review_minimum:
+    rule: "Review risk assessment at minimum annually, plus on significant change"
+    source: "iso27001-2022:Clause 6.1.2 (continual)"
+
+  cross_framework_alignment:
+    rule: "Cyber risks and quality risks documented in unified register but tagged by domain"
+    source: "iso27001-2022 + iso9001-2026 + nis2 — common register avoids duplication"
+
+  threat_intelligence_integration:
+    rule: "Threat intelligence (A.5.7) feeds the risk assessment process at least quarterly"
+    source: "iso27001-2022:A.5.7"
+
+  management_accountability:
+    rule: "Management body briefed on risk register at every management review"
+    source: "nis2:Art.20 + iso9001-2026:Clause 9.3"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de gestion des risques"
+      title_en: "Risk management policy"
+      covers:
+        - "iso27001-2022:Clause 6.1.2"
+        - "iso27001-2022:Clause 6.1.3"
+        - "iso27001-2022:A.5.7"
+        - "iso9001-2026:Clause 6.1"
+        - "iso9001-2026:Clause 6.1.1"
+        - "iso9001-2026:Clause 6.1.2"
+        - "nis2:Art.21.2.a"
+        - "nis2:Art.21.1"
+      scope: "All information assets, business processes, and external dependencies within the QMS/ISMS scope"
+      principles_fr:
+        - "Tout risque identifié doit être enregistré, évalué (likelihood × impact) et tracé jusqu'à clôture"
+        - "Le risk register est unifié (cyber + qualité + opérationnel) avec tagging par domaine"
+        - "L'analyse de risques est revue annuellement et à chaque changement significatif"
+        - "La direction est informée de l'état du risk register à chaque revue de direction"
+        - "L'appétence au risque est définie et approuvée par la direction"
+      raci:
+        accountable: "Direction / RSSI"
+        responsible: ["Risk Manager", "Process Owners"]
+        consulted: ["Legal", "Compliance"]
+        informed: ["Management body", "Auditeur"]
+      numerical_commitments:
+        - metric: "Délai d'enregistrement d'un risque identifié"
+          target: "≤ 5 jours ouvrés"
+        - metric: "Délai de mise en œuvre d'une action de traitement P1"
+          target: "≤ 30 jours"
+        - metric: "Cycle de revue du risk register"
+          target: "Annuel + ad-hoc sur changement majeur"
+        - metric: "Couverture revue management body"
+          target: "100% des revues de direction incluent le risk register"
+
+  procedures:
+    - title_fr: "Procédure d'analyse et traitement des risques"
+      title_en: "Risk assessment and treatment procedure"
+      derived_from: "Politique de gestion des risques"
+      steps:
+        - id: S1
+          actor: "Process Owner"
+          action: "Identifier les actifs/processus en scope et leurs menaces"
+          input: "Inventaire actifs + threat intelligence (A.5.7)"
+          output: "Liste candidate de risques"
+          sla: "Cycle annuel"
+        - id: S2
+          actor: "Risk Manager"
+          action: "Évaluer chaque risque (likelihood × impact)"
+          input: "Liste candidate"
+          output: "Risque scoré + classifié"
+          sla: "≤ 5 jours après S1"
+        - id: S3
+          actor: "Risk Manager + Process Owner"
+          action: "Décider du traitement (accepter, mitiger, transférer, éviter)"
+          input: "Risque scoré + appétence au risque"
+          output: "Plan de traitement"
+          sla: "≤ 10 jours après S2"
+        - id: S4
+          actor: "Process Owner"
+          action: "Mettre en œuvre les mesures de traitement"
+          sla: "Selon priorité (P1 ≤ 30j, P2 ≤ 90j)"
+        - id: S5
+          actor: "Risk Manager"
+          action: "Vérifier l'efficacité du traitement"
+          output: "Risque résiduel évalué"
+          sla: "≤ 30 jours après S4"
+        - id: S6
+          actor: "Direction"
+          action: "Revue du risk register en revue de direction"
+          output: "Décisions stratégiques + ajustement appétence"
+          sla: "Au minimum annuel"
+
+      decision_points:
+        - id: DP1
+          location: "Après S2"
+          condition: "Score de risque > seuil critique ?"
+          if_yes: "Escalader à la direction immédiatement (hors cycle annuel)"
+          if_no: "Continuer flux normal vers S3"
+
+  bpmn:
+    - title: "Workflow Risk Management Cycle"
+      start_event: "Identification d'un risque (cycle annuel ou événement)"
+      end_events: ["Risque clos avec traitement effectif", "Risque accepté documenté"]
+      lanes:
+        - "Process Owner"
+        - "Risk Manager"
+        - "Direction"
+      tasks_count: 6
+      gateway_count: 1
+      timer_events: ["Cycle annuel revue", "T+30j traitement P1"]
+
+  kpis:
+    - id: KPI-RSK-01
+      title_fr: "Couverture risk register (% des processus avec ≥ 1 risque enregistré)"
+      target: "100%"
+      unit: percent
+      threshold_yellow: 95
+      threshold_red: 90
+      source_event: "Risk register database"
+      measurement_frequency: quarterly
+      pdca_loop:
+        plan: "Quarterly review with Process Owners"
+        do: "Capture from risk register tool"
+        check: "Quarterly audit committee"
+        act: "If <95% → mandatory training Process Owners"
+
+    - id: KPI-RSK-02
+      title_fr: "Délai moyen mise en œuvre actions P1"
+      target: "≤ 30 jours"
+      unit: days
+      threshold_yellow: 35
+      threshold_red: 45
+      source_event: "Risk register treatment lifecycle"
+      measurement_frequency: monthly
+      pdca_loop:
+        plan: "Monthly tracking with risk owners"
+        do: "Auto-extract from risk register"
+        check: "Monthly review"
+        act: "If recurring delays → escalation to direction"
+
+    - id: KPI-RSK-03
+      title_fr: "% risques résiduels acceptés vs traités"
+      target: "≤ 20% acceptés (vs traités)"
+      unit: percent
+      source_event: "Risk register treatment status"
+      measurement_frequency: quarterly
+
+    - id: KPI-RSK-04
+      title_fr: "Fréquence intégration threat intelligence"
+      target: "≥ trimestriel"
+      unit: events_per_year
+      source_event: "Risk assessment update events linked to threat intel"
+      measurement_frequency: quarterly
+
+audit_readiness:
+  iso27001-2022:
+    - "Risk assessment procedure documented (Clause 6.1.2)"
+    - "Risk treatment plan present (Clause 6.1.3)"
+    - "Statement of Applicability links A.5.7 to risk register"
+    - "Threat intelligence integration documented and dated"
+  iso9001-2026:
+    - "Risk-based thinking visible per process"
+    - "Actions to address risks documented in management review"
+    - "Effectiveness of actions evaluated"
+  nis2:
+    - "Risk policies signed by management body (Art. 21.2.a + Art. 20)"
+    - "Risk register accessible to authorities upon request"
+    - "Cybersecurity risk linked to ICT supply chain (Art. 21.2.d cross-link)"
+
+conflict_resolutions:
+  - issue: "ISO 27001 prescribes likelihood × impact 1-5; ISO 9001 doesn't prescribe scoring method"
+    resolution: "Adopt ISO 27001 5×5 matrix; ISO 9001 satisfied a fortiori"
+
+  - issue: "NIS2 doesn't define risk register format; ISO 27001 implies one but doesn't specify"
+    resolution: "Define structured risk register schema in policy (id, asset, threat, vulnerability, likelihood, impact, treatment, owner, status, review_date)"
