@@ -1,0 +1,9 @@
+go 1.23
+
+use (
+    ./services/validator
+    ./services/compiler
+    ./services/pipeline
+    ./services/datalake
+    ./edge/agent
+)

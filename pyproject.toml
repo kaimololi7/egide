@@ -1,0 +1,26 @@
+[project]
+name = "egide-workspace"
+version = "0.0.1"
+description = "Egide — Python services workspace (extractor + agents)"
+requires-python = ">=3.13"
+
+[tool.uv.workspace]
+members = [
+    "services/extractor",
+    "agents/common",
+    "agents/compliance",
+    "agents/orchestrator",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
