@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.turbo/
+target/
+bin/
+*.exe
+*.wasm
+
+# Go
+vendor/
+*.test
+*.prof
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.cover
+.nyc_output/
+htmlcov/
+
+# Local dev data
+data/
+postgres-data/
+clickhouse-data/
+qdrant-data/
+ollama-models/
+
+# Generated
+generated/
+*.generated.*
