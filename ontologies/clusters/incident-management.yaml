@@ -1,0 +1,239 @@
+id: cluster:incident-management
+label_fr: "Gestion des incidents"
+label_en: "Incident management"
+category: operational
+priority: 1
+
+description_fr: |
+  Détection, classification, traitement, notification et clôture des incidents
+  de sécurité ou de qualité affectant les services et systèmes. Couvre les
+  exigences cybersécurité (ISO 27001, NIS2) et les non-conformités opérationnelles
+  (ISO 9001).
+
+description_en: |
+  Detection, classification, handling, notification, and closure of incidents
+  affecting services and systems. Covers cybersecurity requirements (ISO 27001,
+  NIS2) and operational non-conformities (ISO 9001).
+
+framework_anchors:
+  - framework: iso27001-2022
+    ref: A.5.24
+    weight: 1.0
+    objective: "Information security incident management planning and preparation"
+    category: organizational
+
+  - framework: iso27001-2022
+    ref: A.5.25
+    weight: 1.0
+    objective: "Assessment and decision on information security events"
+
+  - framework: iso27001-2022
+    ref: A.5.26
+    weight: 1.0
+    objective: "Response to information security incidents"
+
+  - framework: iso27001-2022
+    ref: A.5.27
+    weight: 0.9
+    objective: "Learning from information security incidents"
+
+  - framework: iso27001-2022
+    ref: A.5.28
+    weight: 0.8
+    objective: "Collection of evidence (forensic-ready)"
+
+  - framework: nis2
+    ref: Art.21.2.b
+    weight: 1.0
+    obligation_fr: "Gestion des incidents : mesures techniques, opérationnelles et organisationnelles pour la prévention, la détection, l'analyse, le confinement, la réponse, la récupération et la communication relatives aux incidents."
+
+  - framework: nis2
+    ref: Art.23
+    weight: 1.0
+    obligation_fr: "Obligations de notification d'incidents — alerte précoce 24h, notification détaillée 72h, rapport final 1 mois. Notification au CSIRT national (CSIRT-FR / ANSSI en France) ET aux destinataires des services concernés."
+
+  - framework: iso9001-2026
+    ref: "10.2"
+    weight: 0.7
+    objective: "Non-conformity and corrective action — when a non-conformity occurs, react to it, evaluate the need for action, implement, review effectiveness."
+    note: "Indirect coupling: cybersecurity incidents are a subset of QMS non-conformities."
+
+# Strictest applicable rules (per ADR 002 §5)
+strictest_rules:
+  notification_timeline:
+    rule: "T+24h early warning, T+72h detailed notification, T+1 month final report"
+    source: "nis2:Art.23"
+    rationale: "NIS2 is the only framework imposing strict legal timelines."
+
+  evidence_preservation:
+    rule: "Forensic-ready evidence collection per ISO 27001 A.5.28"
+    source: "iso27001-2022:A.5.28"
+
+  effectiveness_review:
+    rule: "Lessons learned reviewed at next management review (≤ 12 months)"
+    source: "iso9001-2026:9.3 + iso27001-2022:9.3"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de gestion des incidents de sécurité"
+      title_en: "Information security incident management policy"
+      covers:
+        - "iso27001-2022:A.5.24"
+        - "iso27001-2022:A.5.25"
+        - "iso27001-2022:A.5.26"
+        - "iso27001-2022:A.5.27"
+        - "iso27001-2022:A.5.28"
+        - "nis2:Art.21.2.b"
+        - "nis2:Art.23"
+        - "iso9001-2026:10.2"
+      scope: "All systems, services, and data within ISMS scope"
+      principles_fr:
+        - "Tout incident doit être détecté, classifié et tracé sans délai"
+        - "Les incidents majeurs déclenchent une notification CSIRT-FR < 24h"
+        - "Les preuves sont préservées de manière forensic-ready"
+        - "Le retour d'expérience est documenté pour amélioration continue"
+      raci:
+        accountable: "RSSI"
+        responsible: ["Incident Manager", "SOC"]
+        consulted: ["Direction", "DPO"]
+        informed: ["Auditeur interne", "Métiers concernés"]
+      numerical_commitments:
+        - metric: "Délai de notification CSIRT (incident majeur)"
+          target: "≤ 24h depuis détection"
+          source: "nis2:Art.23"
+        - metric: "Délai de réponse initiale (P1)"
+          target: "≤ 1h ouvrée"
+
+  procedures:
+    - title_fr: "Procédure de traitement des incidents de sécurité"
+      derived_from: "Politique de gestion des incidents de sécurité"
+      steps:
+        - id: S1
+          actor: "Détecteur (SOC ou utilisateur)"
+          action: "Signaler un événement de sécurité"
+          input: "Alerte SIEM, ticket utilisateur, alerte EDR"
+          output: "Ticket d'incident initial"
+          sla: "≤ 15 min depuis détection"
+        - id: S2
+          actor: "Incident Manager"
+          action: "Classifier l'incident (P1/P2/P3/P4)"
+          input: "Ticket S1"
+          output: "Classification + priorité"
+          sla: "≤ 30 min depuis S1"
+        - id: S3
+          actor: "Incident Manager"
+          action: "Décider de notifier CSIRT-FR si P1 et NIS2 applicable"
+          input: "Classification S2"
+          output: "Décision de notification"
+          sla: "≤ 1h depuis S2 (pour respecter T+24h global)"
+        - id: S4
+          actor: "Équipe réponse incident"
+          action: "Confiner, éradiquer, récupérer"
+          sla: "Selon classification (RTO P1=4h, P2=24h)"
+        - id: S5
+          actor: "Incident Manager"
+          action: "Notifier CSIRT-FR si applicable (early warning 24h)"
+          output: "Notification soumise + accusé"
+          sla: "≤ 24h depuis détection initiale"
+        - id: S6
+          actor: "Incident Manager"
+          action: "Notification détaillée 72h"
+          sla: "≤ 72h"
+        - id: S7
+          actor: "Incident Manager"
+          action: "Rapport final 1 mois"
+          sla: "≤ 30 jours"
+        - id: S8
+          actor: "Direction sécurité"
+          action: "Retour d'expérience (lessons learned)"
+          output: "Rapport REX + actions correctives"
+          sla: "≤ 30 jours après clôture"
+
+      decision_points:
+        - id: DP1
+          location: "Après S2"
+          condition: "Incident est-il majeur (P1) au sens NIS2 ?"
+          if_yes: "Aller à S3 (notification CSIRT)"
+          if_no: "Aller à S4 (traitement standard)"
+
+  bpmn:
+    - title: "Workflow incident management"
+      start_event: "Événement de sécurité détecté"
+      end_events: ["Incident clos + REX archivé", "Incident escaladé externe"]
+      lanes:
+        - "Détecteur"
+        - "Incident Manager"
+        - "Équipe réponse incident"
+        - "Direction sécurité"
+      tasks_count: 8
+      gateway_count: 1
+      timer_events: ["T+24h CSIRT notification", "T+72h detailed", "T+30j final"]
+
+  kpis:
+    - id: KPI-INC-01
+      title_fr: "MTTR — Mean Time To Resolve (incidents P1)"
+      target: "≤ 4h"
+      unit: "hours"
+      source_event: "ITSM event log incident.resolved"
+      measurement_frequency: "weekly"
+      pdca_loop:
+        plan: "Set quarterly target review with SOC lead"
+        do: "Capture from ServiceNow incident table"
+        check: "Weekly dashboard, monthly trend"
+        act: "If MTTR > 4h for 2 consecutive weeks → procedure review"
+
+    - id: KPI-INC-02
+      title_fr: "Taux de notification CSIRT < 24h pour incidents majeurs"
+      target: "100%"
+      unit: "percent"
+      threshold_yellow: 95
+      threshold_red: 90
+      source_event: "Internal incident log + CSIRT-FR submission timestamp"
+      pdca_loop:
+        plan: "Quarterly tabletop exercise on notification process"
+        do: "Real incidents + simulated"
+        check: "Monthly review"
+        act: "If <95% → mandatory training Incident Manager team"
+
+    - id: KPI-INC-03
+      title_fr: "Nombre d'incidents par catégorie / mois"
+      target: "Trend stable ou décroissant"
+      unit: "count"
+      source_event: "ITSM incident table"
+      measurement_frequency: "monthly"
+
+    - id: KPI-INC-04
+      title_fr: "Couverture REX (% incidents avec lessons learned documentées)"
+      target: "≥ 95%"
+      unit: "percent"
+      source_event: "REX register + incident closure"
+      measurement_frequency: "monthly"
+
+# Audit-readiness expectations per framework
+audit_readiness:
+  iso27001-2022:
+    - "Statement of Applicability mentions A.5.24-28 as applicable"
+    - "Incident register present with audit log"
+    - "Evidence trail (timestamp, actor, action) for each incident"
+    - "Tabletop exercise minutes ≤ 12 months"
+
+  nis2:
+    - "Notification procedure documented and tested"
+    - "CSIRT-FR contact information current"
+    - "Management body briefed on sanctions personnelles (Art. 32)"
+    - "Supply chain incident notification clauses in supplier contracts"
+
+  iso9001-2026:
+    - "Non-conformity register integrated with incident log"
+    - "Corrective action effectiveness reviewed at management review"
+
+# Common conflict resolutions
+conflict_resolutions:
+  - issue: "ISO 27001 says 'reasonable response time'; NIS2 says 24h"
+    resolution: "Adopt NIS2 24h timeline as authoritative. ISO 27001 generic
+                 wording satisfied a fortiori."
+
+  - issue: "ISO 9001 corrective action review cycle (annual) vs ISO 27001
+            (continuous improvement, no fixed cycle)"
+    resolution: "Adopt ISO 9001 annual review as floor; allow more frequent
+                 reviews if KPI thresholds breached."

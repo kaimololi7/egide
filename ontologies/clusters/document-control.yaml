@@ -1,0 +1,222 @@
+id: cluster:document-control
+label_fr: "Maîtrise documentaire"
+label_en: "Document control"
+category: organizational
+priority: 4
+
+description_fr: |
+  Création, approbation, diffusion, révision et archivage des documents qualité
+  et sécurité. Couvre ISO 9001:2026 Clause 7.5 (documented information),
+  ISO 27001:2022 A.5.36 (compliance with policies, rules and standards), et
+  obligation implicite NIS2 Art. 21.2 sur traçabilité documentaire.
+
+description_en: |
+  Creation, approval, distribution, review, and archival of quality and security
+  documents. Covers ISO 9001:2026 Clause 7.5 (documented information), ISO 27001
+  A.5.36 (compliance with policies, rules and standards), and implicit NIS2
+  obligation under Art. 21.2 for documentation traceability.
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 7.5.1"
+    weight: 1.0
+    objective: "Documented information required by the QMS — must be controlled"
+
+  - framework: iso9001-2026
+    ref: "Clause 7.5.2"
+    weight: 1.0
+    objective: "Creating and updating — appropriate identification, format, review and approval"
+
+  - framework: iso9001-2026
+    ref: "Clause 7.5.3"
+    weight: 1.0
+    objective: "Control of documented information — distribution, access, retrieval, storage, version control, retention, disposition"
+
+  - framework: iso27001-2022
+    ref: A.5.36
+    weight: 1.0
+    objective: "Compliance with policies, rules and standards — review of compliance status"
+
+  - framework: iso27001-2022
+    ref: A.5.37
+    weight: 0.9
+    objective: "Documented operating procedures — for information processing activities"
+
+  - framework: iso27001-2022
+    ref: A.5.32
+    weight: 0.7
+    objective: "Intellectual property rights — controlled use of intellectual property"
+
+  - framework: nis2
+    ref: Art.21.2
+    weight: 0.7
+    obligation_fr: "Documentation des mesures techniques et organisationnelles — implicite mais nécessaire pour démontrer la conformité aux autorités."
+
+strictest_rules:
+  versioning_mandatory:
+    rule: "Every controlled document has a version number, date, and approval signature"
+    source: "iso9001-2026:Clause 7.5.3.b"
+
+  approval_workflow:
+    rule: "No document published without formal approval by designated authority"
+    source: "iso9001-2026:Clause 7.5.2 + iso27001-2022:A.5.37"
+
+  distribution_traceable:
+    rule: "Distribution list maintained; only current version available to users"
+    source: "iso9001-2026:Clause 7.5.3.a"
+
+  retention_minimum:
+    rule: "Retention ≥ 3 years for all controlled documents; ≥ 7 years for audit-evidence documents"
+    source: "iso9001-2026:Clause 7.5.3 + national regulations (e.g., FR Code commerce)"
+
+  external_documents_managed:
+    rule: "External documents (laws, standards, supplier specs) identified and controlled"
+    source: "iso9001-2026:Clause 7.5.3 (last paragraph)"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de maîtrise documentaire"
+      title_en: "Document control policy"
+      covers:
+        - "iso9001-2026:Clause 7.5.1"
+        - "iso9001-2026:Clause 7.5.2"
+        - "iso9001-2026:Clause 7.5.3"
+        - "iso27001-2022:A.5.36"
+        - "iso27001-2022:A.5.37"
+      scope: "All controlled documents within the QMS/ISMS — policies, procedures, work instructions, records, external standards"
+      principles_fr:
+        - "Tout document du SMQ/SMSI doit être identifié (titre, version, date, propriétaire)"
+        - "L'approbation formelle est un prérequis à la diffusion"
+        - "Une seule version active à la fois ; les anciennes sont archivées"
+        - "La distribution est tracée ; les utilisateurs accèdent à la version courante uniquement"
+        - "La durée de conservation est définie par catégorie de document"
+        - "Les documents externes (normes, lois) sont identifiés et leur version contrôlée"
+      raci:
+        accountable: "Responsable Qualité"
+        responsible: ["Document Owners", "Document Controller"]
+        consulted: ["RSSI", "Direction"]
+        informed: ["All staff", "Auditeur"]
+      numerical_commitments:
+        - metric: "Délai d'approbation d'un nouveau document standard"
+          target: "≤ 10 jours ouvrés"
+        - metric: "Cycle de revue document"
+          target: "Annuel minimum, ou à chaque changement majeur"
+        - metric: "Durée de rétention minimale"
+          target: "≥ 3 ans (≥ 7 ans pour evidence audit)"
+        - metric: "Couverture revue annuelle"
+          target: "100% des documents revus dans les 12 mois"
+
+  procedures:
+    - title_fr: "Procédure de gestion du cycle de vie documentaire"
+      title_en: "Document lifecycle management procedure"
+      derived_from: "Politique de maîtrise documentaire"
+      steps:
+        - id: S1
+          actor: "Document Owner"
+          action: "Rédiger ou mettre à jour le document selon template"
+          output: "Brouillon versionné (X.0-draft)"
+          sla: "Selon priorité"
+        - id: S2
+          actor: "Document Owner"
+          action: "Soumettre pour revue technique"
+          output: "Brouillon avec commentaires reviewers"
+          sla: "≤ 5 jours ouvrés"
+        - id: S3
+          actor: "Approbateur (selon RACI)"
+          action: "Approuver ou rejeter avec commentaires"
+          output: "Document approuvé X.0 ou rejet motivé"
+          sla: "≤ 5 jours ouvrés"
+        - id: S4
+          actor: "Document Controller"
+          action: "Publier dans le DMS et notifier la liste de distribution"
+          output: "Document publié + accusé de notification"
+          sla: "≤ 1 jour ouvré après S3"
+        - id: S5
+          actor: "Document Controller"
+          action: "Archiver l'ancienne version (avec marquage 'obsolète')"
+          sla: "Concurrent avec S4"
+        - id: S6
+          actor: "Document Owner"
+          action: "Revue annuelle ou ad-hoc, retour à S1 si modification"
+          sla: "Annuel"
+        - id: S7
+          actor: "Document Controller"
+          action: "Disposition finale après période de rétention"
+          sla: "Selon politique de rétention"
+
+      decision_points:
+        - id: DP1
+          location: "Après S3"
+          condition: "Document approuvé ou rejeté ?"
+          if_yes: "Aller à S4 (publication)"
+          if_no: "Retour à S1 (révision)"
+
+  bpmn:
+    - title: "Workflow Document Lifecycle"
+      start_event: "Demande de création/mise à jour document"
+      end_events: ["Document publié + diffusé", "Document archivé/disposé"]
+      lanes:
+        - "Document Owner"
+        - "Reviewer"
+        - "Approbateur"
+        - "Document Controller"
+      tasks_count: 7
+      gateway_count: 1
+      timer_events: ["Cycle revue annuelle"]
+
+  kpis:
+    - id: KPI-DOC-01
+      title_fr: "% documents revus dans les 12 derniers mois"
+      target: "100%"
+      unit: percent
+      threshold_yellow: 95
+      threshold_red: 90
+      source_event: "DMS document.last_review_date"
+      measurement_frequency: monthly
+      pdca_loop:
+        plan: "Monthly review with Document Owners"
+        do: "Auto-extract from DMS metadata"
+        check: "Monthly QHSE meeting"
+        act: "If <95% → escalation owners + mandatory revision"
+
+    - id: KPI-DOC-02
+      title_fr: "Délai moyen d'approbation"
+      target: "≤ 10 jours ouvrés"
+      unit: days
+      source_event: "DMS approval workflow"
+      measurement_frequency: monthly
+
+    - id: KPI-DOC-03
+      title_fr: "Taux d'accès uniquement à la version courante"
+      target: "100% (mesuré par audit)"
+      unit: percent
+      source_event: "DMS access logs + audit findings"
+      measurement_frequency: annual
+
+    - id: KPI-DOC-04
+      title_fr: "% documents avec audit trail complet (création + approbations + diffusions)"
+      target: "100%"
+      unit: percent
+      source_event: "DMS audit log"
+      measurement_frequency: annual
+
+audit_readiness:
+  iso9001-2026:
+    - "Documented information register present and current"
+    - "Approval signatures retrievable per document"
+    - "Distribution list shows current users"
+    - "Retention schedule defined and applied"
+  iso27001-2022:
+    - "Operating procedures (A.5.37) documented for ISMS in-scope activities"
+    - "External standards register with version tracking"
+    - "Access controls on confidential documents"
+  nis2:
+    - "Documentation accessible upon request from competent authorities"
+    - "Procedures for incident response and supply chain documented"
+
+conflict_resolutions:
+  - issue: "ISO 9001 says 'documented information', ISO 27001 says 'documented procedures' (different terminology)"
+    resolution: "Use ISO 9001 'documented information' as canonical term; ISO 27001 'procedure' is a subset"
+
+  - issue: "Retention period not unified across frameworks"
+    resolution: "Adopt strictest applicable: ≥ 7 years for audit-evidence, ≥ 3 years for general controlled docs (FR Code commerce + ISO 9001)"

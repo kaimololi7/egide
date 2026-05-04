@@ -1,0 +1,223 @@
+id: cluster:awareness-training
+label_fr: "Sensibilisation et formation"
+label_en: "Awareness and training"
+category: people
+priority: 5
+
+description_fr: |
+  Sensibilisation des collaborateurs aux exigences qualité et cybersécurité,
+  formation initiale et continue, mesure de l'efficacité. Couvre ISO 9001:2026
+  Clause 7.3 (awareness), ISO 27001:2022 A.6.3 (information security awareness,
+  education and training), et obligation NIS2 Art. 21.2.g (cyberhygiène et
+  formation).
+
+description_en: |
+  Workforce awareness of quality and cybersecurity requirements, initial and
+  continuous training, effectiveness measurement.
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 7.3"
+    weight: 1.0
+    objective: "Awareness — workforce aware of quality policy, objectives, contribution, implications of non-conformity"
+
+  - framework: iso9001-2026
+    ref: "Clause 7.2"
+    weight: 0.9
+    objective: "Competence — determine necessary competence, ensure persons are competent, take actions to acquire competence"
+
+  - framework: iso27001-2022
+    ref: A.6.3
+    weight: 1.0
+    objective: "Information security awareness, education and training — receive appropriate awareness education and training"
+
+  - framework: iso27001-2022
+    ref: A.6.1
+    weight: 0.6
+    objective: "Screening — background verification checks proportional to risk"
+
+  - framework: iso27001-2022
+    ref: A.6.4
+    weight: 0.7
+    objective: "Disciplinary process — formal disciplinary process for security policy violations"
+
+  - framework: nis2
+    ref: Art.21.2.g
+    weight: 1.0
+    obligation_fr: "Pratiques de cyberhygiène de base et formation à la cybersécurité."
+
+  - framework: nis2
+    ref: Art.20
+    weight: 0.7
+    obligation_fr: "Formation des organes de direction sur la cybersécurité — connaissance suffisante des risques et politiques."
+
+strictest_rules:
+  annual_minimum:
+    rule: "All staff receive cybersecurity awareness training at least annually"
+    source: "iso27001-2022:A.6.3 + nis2:Art.21.2.g (continuous practice implies recurrent training)"
+
+  onboarding_mandatory:
+    rule: "Onboarding training mandatory before access to information systems granted"
+    source: "iso27001-2022:A.6.3"
+
+  management_body_training:
+    rule: "Management body receives cybersecurity training (Art. 20 NIS2 strict for essential entities)"
+    source: "nis2:Art.20"
+
+  effectiveness_measured:
+    rule: "Training effectiveness measured (quiz, simulation, behavior tests)"
+    source: "iso9001-2026:Clause 7.2 (effectiveness of actions taken)"
+
+  records_kept:
+    rule: "Training records kept for each individual; retention ≥ 3 years"
+    source: "iso9001-2026:Clause 7.2 + 7.5.3"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de sensibilisation et formation"
+      title_en: "Awareness and training policy"
+      covers:
+        - "iso9001-2026:Clause 7.3"
+        - "iso9001-2026:Clause 7.2"
+        - "iso27001-2022:A.6.3"
+        - "iso27001-2022:A.6.4"
+        - "nis2:Art.21.2.g"
+        - "nis2:Art.20"
+      scope: "All employees, contractors, and third parties with access to information systems or operating processes"
+      principles_fr:
+        - "Tout collaborateur reçoit une formation cybersécurité initiale dans les 30 jours d'embauche"
+        - "Une formation annuelle obligatoire couvre cybersécurité + qualité + RGPD"
+        - "Les fonctions à risque reçoivent une formation spécialisée (admins, dev, support client)"
+        - "L'organe de direction reçoit une formation cybersécurité dédiée (NIS2 Art. 20)"
+        - "L'efficacité est mesurée (quiz post-formation + simulations phishing)"
+        - "Les violations de la politique de sécurité déclenchent un processus disciplinaire formalisé"
+      raci:
+        accountable: "DRH + RSSI"
+        responsible: ["Training Manager", "Managers d'équipe"]
+        consulted: ["Direction", "Legal"]
+        informed: ["All staff"]
+      numerical_commitments:
+        - metric: "Délai de formation initiale post-embauche"
+          target: "≤ 30 jours calendaires"
+        - metric: "Couverture formation annuelle"
+          target: "≥ 95% des collaborateurs"
+        - metric: "Score moyen quiz post-formation"
+          target: "≥ 80%"
+        - metric: "Taux de clic phishing simulé (cible inverse)"
+          target: "≤ 5%"
+
+  procedures:
+    - title_fr: "Procédure de plan de formation et d'évaluation"
+      title_en: "Training plan and evaluation procedure"
+      derived_from: "Politique de sensibilisation et formation"
+      steps:
+        - id: S1
+          actor: "Training Manager"
+          action: "Élaborer le plan de formation annuel (besoins par fonction)"
+          input: "Risk assessment + compétences requises + nouveaux arrivants"
+          output: "Plan de formation validé"
+          sla: "Annuel (Q4 N-1)"
+        - id: S2
+          actor: "Manager d'équipe"
+          action: "Identifier besoins individuels (entretiens annuels)"
+          output: "Plan personnel par collaborateur"
+          sla: "≤ 60 jours après début N"
+        - id: S3
+          actor: "Training Manager"
+          action: "Organiser les sessions (LMS, présentiel, e-learning)"
+          sla: "Selon planning"
+        - id: S4
+          actor: "Collaborateur"
+          action: "Suivre les formations et passer les quiz"
+          output: "Score quiz + attestation"
+          sla: "Selon planning"
+        - id: S5
+          actor: "RSSI"
+          action: "Lancer simulations phishing trimestrielles"
+          output: "Rapport taux de clic + utilisateurs à reformer"
+          sla: "Trimestriel"
+        - id: S6
+          actor: "Training Manager"
+          action: "Revue annuelle d'efficacité avec direction"
+          output: "Rapport + plan d'amélioration"
+          sla: "Annuel"
+
+      decision_points:
+        - id: DP1
+          location: "Après S4"
+          condition: "Score quiz ≥ 80% ?"
+          if_yes: "Formation validée"
+          if_no: "Reformation obligatoire dans 30j"
+
+  bpmn:
+    - title: "Workflow Training Cycle"
+      start_event: "Cycle annuel ou nouvel arrivant"
+      end_events: ["Formation validée", "Reformation programmée"]
+      lanes:
+        - "DRH"
+        - "Training Manager"
+        - "Manager d'équipe"
+        - "Collaborateur"
+        - "RSSI"
+      tasks_count: 6
+      gateway_count: 1
+      timer_events: ["Onboarding 30j", "Cycle annuel", "Phishing trimestriel"]
+
+  kpis:
+    - id: KPI-TRN-01
+      title_fr: "% collaborateurs avec formation cybersécurité à jour (< 12 mois)"
+      target: "≥ 95%"
+      unit: percent
+      threshold_yellow: 90
+      threshold_red: 85
+      source_event: "LMS completion records"
+      measurement_frequency: monthly
+      pdca_loop:
+        plan: "Quarterly training plan review"
+        do: "LMS automated reminders + reporting"
+        check: "Monthly dashboard"
+        act: "If <90% → escalation managers + extended deadline"
+
+    - id: KPI-TRN-02
+      title_fr: "Score moyen quiz cybersécurité"
+      target: "≥ 80%"
+      unit: percent
+      source_event: "LMS quiz scores"
+      measurement_frequency: per_session
+
+    - id: KPI-TRN-03
+      title_fr: "Taux de clic phishing simulé"
+      target: "≤ 5%"
+      unit: percent
+      threshold_yellow: 7
+      threshold_red: 10
+      source_event: "Phishing simulation tool"
+      measurement_frequency: quarterly
+
+    - id: KPI-TRN-04
+      title_fr: "Délai formation post-embauche"
+      target: "≤ 30 jours"
+      unit: days
+      source_event: "HRIS hire date + LMS completion"
+      measurement_frequency: monthly
+
+audit_readiness:
+  iso9001-2026:
+    - "Training records per individual"
+    - "Competence requirements documented per role"
+    - "Effectiveness of actions evaluated (quiz/simulations)"
+  iso27001-2022:
+    - "A.6.3 awareness program documented and dated < 12 months"
+    - "Specialized training for privileged roles (admins, devs)"
+    - "Disciplinary process referenced and applied if violations"
+  nis2:
+    - "Cyber hygiene training annual minimum (Art. 21.2.g)"
+    - "Management body training documented (Art. 20 — sanctions personnelles)"
+    - "Phishing simulation results presented in management review"
+
+conflict_resolutions:
+  - issue: "ISO 9001 'competence' broader than ISO 27001 'awareness'"
+    resolution: "Build unified training matrix: row = role, column = topic (qualité, cyber, RGPD, métier); awareness is a subset of competence"
+
+  - issue: "NIS2 Art. 20 management body training has no specific frequency; ISO 27001 doesn't address management training"
+    resolution: "Adopt annual management body training, with topical updates on regulatory changes (ad-hoc)"

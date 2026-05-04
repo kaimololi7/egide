@@ -1,0 +1,245 @@
+id: cluster:continual-improvement
+label_fr: "Amélioration continue"
+label_en: "Continual improvement"
+category: governance
+priority: 10
+
+description_fr: |
+  Boucle d'amélioration continue PDCA pour les SMQ, SMSI, et mesures de
+  cybersécurité. Couvre ISO 9001:2026 Clause 10 (Improvement), ISO 27001:2022
+  Clause 10 (Improvement), NIS2 Art. 21.1 (mesures appropriées et proportionnées
+  + révision continue).
+
+description_en: |
+  Continual improvement loop (PDCA) for QMS, ISMS, and cybersecurity measures.
+  Covers ISO 9001:2026 Clause 10, ISO 27001:2022 Clause 10, NIS2 Art. 21.1
+  (continuous appropriateness review).
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 10.1"
+    weight: 1.0
+    objective: "Determine and select opportunities for improvement and implement actions to meet requirements and enhance customer satisfaction"
+
+  - framework: iso9001-2026
+    ref: "Clause 10.2"
+    weight: 1.0
+    objective: "Nonconformity and corrective action — react to NC, evaluate need for action, implement action, review effectiveness"
+
+  - framework: iso9001-2026
+    ref: "Clause 10.3"
+    weight: 1.0
+    objective: "Continual improvement — continually improve the suitability, adequacy and effectiveness of the QMS"
+
+  - framework: iso27001-2022
+    ref: "Clause 10.1"
+    weight: 1.0
+    objective: "Continual improvement — continually improve the suitability, adequacy and effectiveness of the ISMS"
+
+  - framework: iso27001-2022
+    ref: "Clause 10.2"
+    weight: 1.0
+    objective: "Nonconformity and corrective action — same structure as ISO 9001"
+
+  - framework: nis2
+    ref: Art.21.1
+    weight: 0.9
+    obligation_fr: "Mesures techniques, opérationnelles et organisationnelles appropriées et proportionnées — implique une révision continue de l'adéquation."
+
+strictest_rules:
+  pdca_loop_documented:
+    rule: "Every NC and improvement action follows documented PDCA cycle (Plan / Do / Check / Act)"
+    source: "iso9001-2026:Clause 10.2 + iso27001-2022:Clause 10.2"
+
+  effectiveness_review:
+    rule: "Effectiveness of corrective actions reviewed before closure (no closure without verification)"
+    source: "iso9001-2026:Clause 10.2.2 + iso27001-2022:Clause 10.2"
+
+  central_register:
+    rule: "Central improvement / NC register accessible to all stakeholders with status tracking"
+    source: "iso9001-2026:Clause 10.2 (documentation)"
+
+  root_cause_analysis:
+    rule: "Major NCs require root cause analysis (5-Whys, Ishikawa, or equivalent) before action plan"
+    source: "iso9001-2026:Clause 10.2.1.b"
+
+  trend_analysis:
+    rule: "Trends in NCs analyzed periodically (≥ semestrial) to detect systemic issues"
+    source: "iso9001-2026:Clause 10.3 + iso27001-2022:Clause 10.1"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique d'amélioration continue"
+      title_en: "Continual improvement policy"
+      covers:
+        - "iso9001-2026:Clause 10.1"
+        - "iso9001-2026:Clause 10.2"
+        - "iso9001-2026:Clause 10.3"
+        - "iso27001-2022:Clause 10.1"
+        - "iso27001-2022:Clause 10.2"
+        - "nis2:Art.21.1"
+      scope: "QMS, ISMS, and all related processes/controls"
+      principles_fr:
+        - "Toute non-conformité (audit, incident, customer feedback) déclenche un cycle PDCA"
+        - "Les NC majeures font l'objet d'une analyse de cause racine avant action"
+        - "L'efficacité des actions est vérifiée avant clôture"
+        - "Un registre central des NCs/actions est maintenu et tracé"
+        - "Les tendances sont analysées au minimum semestriellement"
+        - "L'amélioration continue est sujet récurrent en revue de direction"
+      raci:
+        accountable: "Responsable Qualité + RSSI"
+        responsible: ["NC Owners", "Process Owners"]
+        consulted: ["Direction", "Auditeurs internes"]
+        informed: ["All staff", "Management body"]
+      numerical_commitments:
+        - metric: "% NC majeures avec analyse de cause racine"
+          target: "100%"
+        - metric: "% actions clôturées dans délai cible"
+          target: "≥ 90% (P1 ≤ 30j, P2 ≤ 90j, P3 ≤ 180j)"
+        - metric: "Cycle d'analyse tendances NCs"
+          target: "≥ semestrial"
+        - metric: "Effectiveness verified before closure"
+          target: "100% des actions"
+
+  procedures:
+    - title_fr: "Procédure de gestion des non-conformités et actions correctives"
+      title_en: "Nonconformity and corrective action procedure"
+      derived_from: "Politique d'amélioration continue"
+      steps:
+        - id: S1
+          actor: "Détecteur (auditeur, opérateur, customer feedback, incident)"
+          action: "Enregistrer la non-conformité dans le registre central"
+          input: "NC observée + preuves"
+          output: "Entrée registre avec ID + classification draft"
+          sla: "≤ 5 jours après détection"
+        - id: S2
+          actor: "Process Owner"
+          action: "Évaluer impact et classifier (majeure / mineure / opportunité)"
+          input: "Entrée S1"
+          output: "Classification confirmée + priorité"
+          sla: "≤ 5 jours après S1"
+        - id: S3
+          actor: "Process Owner"
+          action: "Analyser cause racine si majeure (5-Whys ou équivalent)"
+          input: "NC classifiée majeure"
+          output: "Rapport de cause racine"
+          sla: "≤ 15 jours après S2"
+        - id: S4
+          actor: "Process Owner + RSSI/Responsable Qualité"
+          action: "Définir le plan d'action correctif"
+          input: "Cause racine + impact"
+          output: "Plan d'action avec actions, owners, délais"
+          sla: "≤ 10 jours après S3"
+        - id: S5
+          actor: "Action owners"
+          action: "Mettre en œuvre les actions"
+          sla: "Selon priorité (P1 ≤ 30j, P2 ≤ 90j, P3 ≤ 180j)"
+        - id: S6
+          actor: "Process Owner"
+          action: "Vérifier l'efficacité (mesures, observations)"
+          output: "Rapport d'efficacité"
+          sla: "≤ 30 jours après S5"
+        - id: S7
+          actor: "Responsable Qualité"
+          action: "Clôturer NC après confirmation efficacité"
+          output: "NC clôturée dans registre"
+          sla: "≤ 5 jours après S6"
+        - id: S8
+          actor: "Responsable Qualité"
+          action: "Analyser les tendances (semestriel)"
+          output: "Rapport de tendances + recommandations"
+          sla: "Semestriel"
+
+      decision_points:
+        - id: DP1
+          location: "Après S2"
+          condition: "Type de NC ?"
+          branches:
+            majeure: "Cause racine obligatoire (S3)"
+            mineure: "Skip S3, aller à S4"
+            opportunité: "Pas obligatoire, priorisation par direction"
+        - id: DP2
+          location: "Après S6"
+          condition: "Efficacité confirmée ?"
+          if_yes: "Clôturer (S7)"
+          if_no: "Retour à S4 (revoir actions)"
+
+  bpmn:
+    - title: "Workflow Continual Improvement (PDCA)"
+      start_event: "NC détectée (audit / incident / feedback)"
+      end_events: ["NC clôturée + efficacité vérifiée", "NC réouverte (efficacité non confirmée)"]
+      lanes:
+        - "Détecteur"
+        - "Process Owner"
+        - "Action Owners"
+        - "Responsable Qualité"
+      tasks_count: 8
+      gateway_count: 2
+      timer_events: ["T+5j enregistrement", "T+15j cause racine", "T+30/90/180j action", "Cycle semestriel tendances"]
+
+  kpis:
+    - id: KPI-CI-01
+      title_fr: "% NCs clôturées dans délai cible"
+      target: "≥ 90%"
+      unit: percent
+      threshold_yellow: 85
+      threshold_red: 75
+      source_event: "NC register lifecycle"
+      measurement_frequency: monthly
+      pdca_loop:
+        plan: "Monthly target review at QMS committee"
+        do: "Track NC ageing in register"
+        check: "Monthly dashboard"
+        act: "If <85% → escalation + ressources additionnelles"
+
+    - id: KPI-CI-02
+      title_fr: "% NCs majeures avec analyse cause racine documentée"
+      target: "100%"
+      unit: percent
+      source_event: "NC register + RCA documents"
+      measurement_frequency: monthly
+
+    - id: KPI-CI-03
+      title_fr: "Nombre NCs ouvertes / mois (trend)"
+      target: "Trend stable ou décroissant"
+      unit: count
+      source_event: "NC register"
+      measurement_frequency: monthly
+
+    - id: KPI-CI-04
+      title_fr: "% actions correctives avec efficacité vérifiée avant clôture"
+      target: "100%"
+      unit: percent
+      source_event: "NC closure documents"
+      measurement_frequency: monthly
+
+    - id: KPI-CI-05
+      title_fr: "Gain mesuré post-action (économie / réduction risque)"
+      target: "Documenté pour ≥ 80% actions majeures"
+      unit: percent
+      source_event: "Effectiveness reports"
+      measurement_frequency: quarterly
+
+audit_readiness:
+  iso9001-2026:
+    - "NC and improvement register present and current (Clause 10.2)"
+    - "Root cause analysis evidenced for major NCs (Clause 10.2.1.b)"
+    - "Effectiveness verification before closure (Clause 10.2.2)"
+    - "Continual improvement evidence (Clause 10.3)"
+    - "Trend analysis dated < 6 months"
+  iso27001-2022:
+    - "ISMS NCs treated through same PDCA cycle (Clause 10.2)"
+    - "Continual improvement evidence in management review (Clause 10.1)"
+  nis2:
+    - "Continuous review of measures appropriateness (Art. 21.1)"
+    - "Improvement tied to management review and risk assessment updates"
+
+conflict_resolutions:
+  - issue: "ISO 9001 and ISO 27001 NC processes can be unified or separate"
+    resolution: "Unified central NC register with domain tagging (qualité / cyber / RGPD / autre); same procedure applies"
+
+  - issue: "NIS2 doesn't define NC formally; ISO defines clearly"
+    resolution: "Apply ISO 9001/27001 NC structure to NIS2 measures effectiveness gaps"
+
+  - issue: "Effectiveness verification methods not standardized"
+    resolution: "Define methods per NC type: KPI follow-up (quantitative), audit revisit (sampling), customer feedback (subjective)"

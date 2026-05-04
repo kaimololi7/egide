@@ -1,0 +1,179 @@
+id: cluster:change-management
+label_fr: "Gestion des changements"
+label_en: "Change management"
+category: operational
+priority: 2
+
+description_fr: |
+  Encadrement des modifications aux systèmes, services et processus. Couvre
+  ISO 27001 A.8.32, NIS2 Art. 21.2.f (effectiveness), et ISO 9001 §8.5.6
+  (control of changes).
+
+description_en: |
+  Governance of changes to systems, services, and processes. Covers ISO 27001
+  A.8.32, NIS2 Art. 21.2.f (effectiveness), and ISO 9001 §8.5.6 (control of
+  changes).
+
+framework_anchors:
+  - framework: iso27001-2022
+    ref: A.8.32
+    weight: 1.0
+    objective: "Changes to information processing facilities and information systems shall be subject to change management procedures."
+
+  - framework: iso27001-2022
+    ref: A.5.24
+    weight: 0.5
+    objective: "Cross-link: incident management coordinated with change management"
+
+  - framework: nis2
+    ref: Art.21.2.f
+    weight: 0.9
+    obligation_fr: "Politiques et procédures pour évaluer l'efficacité des mesures techniques, opérationnelles et organisationnelles de gestion des risques."
+
+  - framework: iso9001-2026
+    ref: "8.5.6"
+    weight: 1.0
+    objective: "Control of changes — review and control changes for production or service provision to ensure continuing conformity."
+
+strictest_rules:
+  change_classification:
+    rule: "Mandatory classification (standard / normal / emergency) before execution"
+    source: "iso27001-2022:A.8.32"
+
+  approval_workflow:
+    rule: "All non-emergency changes require pre-approval; emergency changes require post-implementation review within 24h"
+    source: "iso27001-2022:A.8.32 + iso9001-2026:8.5.6"
+
+  effectiveness_review:
+    rule: "Change effectiveness assessed via KPIs at next management review"
+    source: "nis2:Art.21.2.f + iso9001-2026:9.3"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de gestion des changements"
+      covers:
+        - "iso27001-2022:A.8.32"
+        - "iso9001-2026:8.5.6"
+        - "nis2:Art.21.2.f"
+      scope: "All changes affecting in-scope information systems and operational processes"
+      principles_fr:
+        - "Tout changement doit être classifié (standard / normal / urgent) avant exécution"
+        - "Les changements normaux passent par un CAB (Change Advisory Board)"
+        - "Les changements urgents sont approuvés a posteriori sous 24h"
+        - "L'efficacité des changements est mesurée via le change failure rate"
+      raci:
+        accountable: "DSI"
+        responsible: ["Change Manager", "Manager IT Ops"]
+        consulted: ["RSSI", "Métiers", "Architecte"]
+        informed: ["Direction", "Audit interne"]
+      numerical_commitments:
+        - metric: "Lead time changement standard"
+          target: "≤ 5 jours ouvrés"
+        - metric: "Change failure rate"
+          target: "≤ 5%"
+        - metric: "Délai post-review urgences"
+          target: "≤ 24h après exécution"
+
+  procedures:
+    - title_fr: "Procédure de traitement d'une demande de changement (RFC)"
+      derived_from: "Politique de gestion des changements"
+      steps:
+        - id: S1
+          actor: "Demandeur"
+          action: "Soumettre RFC avec justification métier et impact estimé"
+          input: "Besoin métier ou maintenance"
+          output: "RFC enregistrée"
+          sla: "n/a"
+        - id: S2
+          actor: "Change Manager"
+          action: "Classifier (standard / normal / urgent)"
+          sla: "≤ 1 jour ouvré"
+        - id: S3
+          actor: "Change Manager"
+          action: "Évaluer l'impact technique, sécurité, métier"
+          sla: "≤ 2 jours ouvrés (normal)"
+        - id: S4
+          actor: "CAB ou Approbateur délégué"
+          action: "Approuver ou rejeter"
+          sla: "≤ 1 réunion CAB hebdo"
+        - id: S5
+          actor: "Exécutant"
+          action: "Implémenter le changement selon plan approuvé"
+          sla: "Selon planning approuvé"
+        - id: S6
+          actor: "Vérificateur"
+          action: "Tester et valider en post-implémentation"
+          sla: "≤ 1 jour après S5"
+        - id: S7
+          actor: "Change Manager"
+          action: "Clôturer avec rapport d'efficacité"
+          sla: "≤ 5 jours après S6"
+
+      decision_points:
+        - id: DP1
+          location: "Après S2"
+          condition: "Type de changement ?"
+          branches:
+            standard: "Skip CAB → S5 directement"
+            normal: "Aller à S3 puis CAB"
+            urgent: "Skip CAB, exécution immédiate, post-review obligatoire"
+
+  bpmn:
+    - title: "Workflow Change Management"
+      start_event: "RFC créée"
+      end_events: ["Changement approuvé et clos", "RFC rejetée"]
+      lanes:
+        - "Demandeur"
+        - "Change Manager"
+        - "CAB / Approbateur"
+        - "Exécutant"
+        - "Vérificateur"
+      tasks_count: 8
+      gateway_count: 2
+      timer_events: ["T+5j SLA standard change", "T+24h emergency CAB"]
+
+  kpis:
+    - id: KPI-CHG-01
+      title_fr: "Lead time changement standard"
+      target: "≤ 5 jours ouvrés"
+      unit: "days"
+      source_event: "ITSM change_request.created → resolved"
+      measurement_frequency: "weekly"
+      pdca_loop:
+        plan: "Quarterly review CAB process"
+        do: "ServiceNow extract"
+        check: "Weekly dashboard"
+        act: "If P95 > 5 days → CAB cadence review"
+
+    - id: KPI-CHG-02
+      title_fr: "Change failure rate"
+      target: "≤ 5%"
+      unit: "percent"
+      formula: "count(changes WHERE failure=true) / count(changes)"
+      threshold_yellow: 7
+      threshold_red: 10
+      source_event: "ITSM + post-implementation review"
+
+    - id: KPI-CHG-03
+      title_fr: "Post-implementation review completion rate (urgences)"
+      target: "100%"
+      unit: "percent"
+      source_event: "ITSM change urgent + REX archive"
+
+audit_readiness:
+  iso27001-2022:
+    - "Change register with classification, approver, evidence"
+    - "CAB minutes archived"
+    - "Failed changes documented with corrective actions"
+
+  iso9001-2026:
+    - "Change effectiveness KPI in management review"
+    - "Documented criteria for change classification"
+
+  nis2:
+    - "Change effectiveness measurable via KPI"
+    - "Cross-link with incident management for changes that triggered incidents"
+
+conflict_resolutions:
+  - issue: "ITIL Change Enablement uses 'standard / normal / emergency'; ISO 9001 uses 'planned / unplanned'"
+    resolution: "Use ITIL terminology (more granular). Map to ISO 9001 in audit reports."

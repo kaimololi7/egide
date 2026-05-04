@@ -1,0 +1,230 @@
+id: cluster:internal-audit
+label_fr: "Audit interne"
+label_en: "Internal audit"
+category: governance
+priority: 8
+
+description_fr: |
+  Programme d'audit interne pour vérifier la conformité du SMQ/SMSI aux
+  exigences. Couvre ISO 9001:2026 Clause 9.2, ISO 27001:2022 Clause 9.2,
+  obligation implicite NIS2 (Art. 21.2.f effectiveness assessment).
+
+description_en: |
+  Internal audit program to verify QMS/ISMS conformity to requirements. Covers
+  ISO 9001:2026 Clause 9.2, ISO 27001:2022 Clause 9.2, implicit NIS2 obligation
+  (Art. 21.2.f effectiveness assessment).
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 9.2.1"
+    weight: 1.0
+    objective: "Internal audit — conduct internal audits at planned intervals to determine if QMS conforms to requirements"
+
+  - framework: iso9001-2026
+    ref: "Clause 9.2.2"
+    weight: 1.0
+    objective: "Plan, establish, implement and maintain audit programme(s)"
+
+  - framework: iso27001-2022
+    ref: "Clause 9.2.1"
+    weight: 1.0
+    objective: "Conduct internal audits at planned intervals to determine if ISMS conforms to requirements"
+
+  - framework: iso27001-2022
+    ref: "Clause 9.2.2"
+    weight: 1.0
+    objective: "Plan, establish, implement and maintain audit programme(s)"
+
+  - framework: iso27001-2022
+    ref: A.5.35
+    weight: 0.7
+    objective: "Independent review of information security — at planned intervals or when significant changes occur"
+
+  - framework: nis2
+    ref: Art.21.2.f
+    weight: 0.8
+    obligation_fr: "Politiques et procédures pour évaluer l'efficacité des mesures techniques, opérationnelles et organisationnelles."
+
+strictest_rules:
+  annual_minimum_cycle:
+    rule: "Audit programme covers all clauses and all in-scope controls over ≤ 3 year cycle (≥ annual frequency for high-risk areas)"
+    source: "iso9001-2026:Clause 9.2.2 + iso27001-2022:Clause 9.2.2"
+
+  auditor_independence:
+    rule: "Auditors do not audit their own work; rotation if internal auditors"
+    source: "iso9001-2026:Clause 9.2.2 + iso27001-2022:A.5.35"
+
+  audit_plan_documented:
+    rule: "Annual audit programme documented with criteria, scope, frequency, methods"
+    source: "iso9001-2026:Clause 9.2.2"
+
+  findings_tracked:
+    rule: "Findings and non-conformities tracked to closure with corrective actions (link to continual improvement)"
+    source: "iso9001-2026:Clause 10.2 + iso27001-2022:Clause 10.2"
+
+  results_reported_to_management:
+    rule: "Audit results reported to management in management review"
+    source: "iso9001-2026:Clause 9.3 + iso27001-2022:Clause 9.3"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique d'audit interne"
+      title_en: "Internal audit policy"
+      covers:
+        - "iso9001-2026:Clause 9.2.1"
+        - "iso9001-2026:Clause 9.2.2"
+        - "iso27001-2022:Clause 9.2.1"
+        - "iso27001-2022:Clause 9.2.2"
+        - "iso27001-2022:A.5.35"
+        - "nis2:Art.21.2.f"
+      scope: "QMS and ISMS in their full scope; including ICT systems, supplier oversight, and management processes"
+      principles_fr:
+        - "Toutes les clauses et tous les contrôles applicables sont audités sur un cycle ≤ 3 ans"
+        - "Les audits sont conduits par des auditeurs indépendants du processus audité"
+        - "Le programme d'audit est documenté annuellement avec scope, dates, ressources"
+        - "Les non-conformités identifiées sont tracées jusqu'à clôture (lien actions correctives)"
+        - "Les résultats sont rapportés à la direction en revue de direction"
+        - "L'efficacité des mesures (NIS2 Art. 21.2.f) est évaluée par les audits"
+      raci:
+        accountable: "Direction (sponsor) + Lead Auditor"
+        responsible: ["Internal Audit Manager", "Auditeurs internes"]
+        consulted: ["Process Owners audités", "RSSI", "Responsable Qualité"]
+        informed: ["Direction", "Auditeur externe", "Management body"]
+      numerical_commitments:
+        - metric: "Cycle de couverture audit"
+          target: "100% des clauses + contrôles sur ≤ 3 ans (annuel pour haute criticité)"
+        - metric: "% non-conformités majeures clôturées dans le délai cible"
+          target: "≥ 90% sous 90 jours"
+        - metric: "Délai entre audit et rapport"
+          target: "≤ 30 jours"
+        - metric: "Indépendance auditeur"
+          target: "100% (vérifié par déclaration)"
+
+  procedures:
+    - title_fr: "Procédure de planification et conduite d'audit interne"
+      title_en: "Internal audit planning and execution procedure"
+      derived_from: "Politique d'audit interne"
+      steps:
+        - id: S1
+          actor: "Internal Audit Manager"
+          action: "Établir le programme d'audit annuel (scope, dates, ressources)"
+          input: "Risk assessment + programme N-1 + résultats audits précédents"
+          output: "Programme d'audit annuel approuvé"
+          sla: "Annuel (Q4 N-1)"
+        - id: S2
+          actor: "Internal Audit Manager"
+          action: "Désigner les auditeurs (indépendants du scope audité)"
+          output: "Plan auditeurs + déclarations indépendance"
+          sla: "≤ 30 jours avant audit"
+        - id: S3
+          actor: "Lead Auditor"
+          action: "Préparer l'audit (checklist, échantillonnage, documents)"
+          sla: "≤ 5 jours ouvrés avant audit"
+        - id: S4
+          actor: "Auditeurs"
+          action: "Conduire l'audit (entretiens, observations, examen documents)"
+          output: "Notes de terrain + preuves"
+          sla: "Selon planning (typiquement 2-5 jours)"
+        - id: S5
+          actor: "Lead Auditor"
+          action: "Réunion de clôture avec audités (présentation findings)"
+          sla: "Dernier jour de l'audit"
+        - id: S6
+          actor: "Lead Auditor"
+          action: "Rédiger le rapport d'audit"
+          output: "Rapport d'audit avec findings + NCs"
+          sla: "≤ 30 jours après audit"
+        - id: S7
+          actor: "Process Owner audité"
+          action: "Définir les actions correctives pour chaque NC"
+          output: "Plan d'actions correctives"
+          sla: "≤ 30 jours après réception rapport"
+        - id: S8
+          actor: "Internal Audit Manager"
+          action: "Suivre la mise en œuvre et clôturer NCs"
+          sla: "Selon délai cible des NCs (≤ 90j majeures)"
+        - id: S9
+          actor: "Internal Audit Manager"
+          action: "Présenter résultats consolidés en revue de direction"
+          sla: "≥ annuel"
+
+      decision_points:
+        - id: DP1
+          location: "Après S6"
+          condition: "NC majeure ou mineure ?"
+          branches:
+            majeure: "Délai cible ≤ 90j + suivi mensuel"
+            mineure: "Délai cible ≤ 180j + suivi trimestriel"
+            opportunité: "Pas d'obligation, à évaluer en revue"
+
+  bpmn:
+    - title: "Workflow Internal Audit Cycle"
+      start_event: "Cycle annuel ou audit ad-hoc déclenché"
+      end_events: ["Audit clôturé + NCs traitées", "Audit reporté/annulé"]
+      lanes:
+        - "Internal Audit Manager"
+        - "Lead Auditor"
+        - "Auditeurs"
+        - "Process Owners audités"
+      tasks_count: 9
+      gateway_count: 1
+      timer_events: ["Cycle annuel programme", "T+30j rapport", "T+90j NC majeure"]
+
+  kpis:
+    - id: KPI-AUD-01
+      title_fr: "% couverture programme audit annuel"
+      target: "100%"
+      unit: percent
+      threshold_yellow: 90
+      threshold_red: 80
+      source_event: "Audit programme tracking"
+      measurement_frequency: quarterly
+      pdca_loop:
+        plan: "Programme défini Q4 N-1"
+        do: "Audits planifiés et exécutés"
+        check: "Trimestriel — taux exécution"
+        act: "If <90% → reprogrammer + ressources additionnelles"
+
+    - id: KPI-AUD-02
+      title_fr: "Délai moyen rapport d'audit"
+      target: "≤ 30 jours"
+      unit: days
+      source_event: "Audit log timestamps"
+      measurement_frequency: per_audit
+
+    - id: KPI-AUD-03
+      title_fr: "% NCs majeures clôturées sous 90j"
+      target: "≥ 90%"
+      unit: percent
+      threshold_yellow: 85
+      threshold_red: 75
+      source_event: "NC register"
+      measurement_frequency: monthly
+
+    - id: KPI-AUD-04
+      title_fr: "Nombre NCs identifiées par audit (trend)"
+      target: "Trend décroissant sur 3 ans"
+      unit: count
+      source_event: "Audit reports"
+      measurement_frequency: per_audit
+
+audit_readiness:
+  iso9001-2026:
+    - "Audit programme documented and approved"
+    - "Audit reports retrievable per cycle"
+    - "Auditor independence declarations"
+    - "Findings tracked to closure with evidence"
+    - "Results reported in management review minutes"
+  iso27001-2022:
+    - "ISMS audit programme covers all clauses 4-10 + Annex A applicable controls"
+    - "A.5.35 independent reviews documented"
+    - "Audit findings linked to risk register where applicable"
+  nis2:
+    - "Effectiveness of measures evaluated (Art. 21.2.f) — internal audit is a primary mechanism"
+
+conflict_resolutions:
+  - issue: "ISO 9001 and ISO 27001 audit programmes can be combined or separate"
+    resolution: "Combined integrated audit programme recommended for ETI (efficiency); explicit scoping per audit (some sessions QMS-only, some ISMS-only, some combined)"
+
+  - issue: "Internal vs external audit scope overlap"
+    resolution: "Internal audit programme designed to anticipate external (certification) audit findings; external audit findings re-injected into internal programme"

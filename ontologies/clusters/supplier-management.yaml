@@ -1,0 +1,252 @@
+id: cluster:supplier-management
+label_fr: "Gestion des fournisseurs et tiers"
+label_en: "Supplier and third-party management"
+category: organizational
+priority: 7
+
+description_fr: |
+  Sélection, due diligence, contractualisation, suivi et désengagement des
+  fournisseurs et prestataires de services. Couvre ISO 9001:2026 Clause 8.4
+  (external providers), ISO 27001:2022 A.5.19-A.5.23 (supplier relationships),
+  NIS2 Art. 21.2.d (sécurité de la chaîne d'approvisionnement).
+
+description_en: |
+  Selection, due diligence, contracting, monitoring, and offboarding of suppliers
+  and service providers. Covers ISO 9001:2026 Clause 8.4 (external providers),
+  ISO 27001:2022 A.5.19-23 (supplier relationships), NIS2 Art. 21.2.d (supply
+  chain security).
+
+framework_anchors:
+  - framework: iso9001-2026
+    ref: "Clause 8.4.1"
+    weight: 1.0
+    objective: "Control of externally provided processes, products and services — ensure conformity"
+
+  - framework: iso9001-2026
+    ref: "Clause 8.4.2"
+    weight: 1.0
+    objective: "Type and extent of control — define controls applied to external providers"
+
+  - framework: iso9001-2026
+    ref: "Clause 8.4.3"
+    weight: 0.9
+    objective: "Information for external providers — communicate requirements"
+
+  - framework: iso27001-2022
+    ref: A.5.19
+    weight: 1.0
+    objective: "Information security in supplier relationships — define and apply requirements"
+
+  - framework: iso27001-2022
+    ref: A.5.20
+    weight: 1.0
+    objective: "Addressing information security within supplier agreements — establish and agree relevant requirements"
+
+  - framework: iso27001-2022
+    ref: A.5.21
+    weight: 0.9
+    objective: "Managing information security in the ICT supply chain — manage risks"
+
+  - framework: iso27001-2022
+    ref: A.5.22
+    weight: 0.9
+    objective: "Monitoring, review and change management of supplier services"
+
+  - framework: iso27001-2022
+    ref: A.5.23
+    weight: 0.8
+    objective: "Information security for use of cloud services — establish processes for selecting and managing cloud services"
+
+  - framework: nis2
+    ref: Art.21.2.d
+    weight: 1.0
+    obligation_fr: "Sécurité de la chaîne d'approvisionnement, y compris les aspects relatifs à la sécurité concernant les relations entre chaque entité et ses fournisseurs ou prestataires de services directs."
+
+strictest_rules:
+  due_diligence_pre_contract:
+    rule: "Information security and quality due diligence performed before contract signature for all suppliers in scope"
+    source: "iso27001-2022:A.5.19 + iso9001-2026:Clause 8.4.1"
+
+  contract_security_clauses:
+    rule: "Mandatory security clauses in supplier contracts: data protection, incident notification, right to audit, exit strategy"
+    source: "iso27001-2022:A.5.20 + nis2:Art.21.2.d"
+
+  supplier_register_maintained:
+    rule: "Supplier register with criticality classification, contract dates, last review, contact info"
+    source: "iso27001-2022:A.5.21 + iso9001-2026:Clause 8.4.2"
+
+  monitoring_periodic:
+    rule: "Critical suppliers reviewed ≥ annually; non-critical ≥ every 2 years"
+    source: "iso27001-2022:A.5.22"
+
+  incident_notification_clause:
+    rule: "Suppliers contractually obligated to notify incidents affecting client < 24h (NIS2 driver)"
+    source: "nis2:Art.21.2.d + Art.23"
+
+typical_artifacts:
+  policies:
+    - title_fr: "Politique de gestion des fournisseurs et tiers"
+      title_en: "Supplier and third-party management policy"
+      covers:
+        - "iso9001-2026:Clause 8.4.1"
+        - "iso9001-2026:Clause 8.4.2"
+        - "iso9001-2026:Clause 8.4.3"
+        - "iso27001-2022:A.5.19"
+        - "iso27001-2022:A.5.20"
+        - "iso27001-2022:A.5.21"
+        - "iso27001-2022:A.5.22"
+        - "iso27001-2022:A.5.23"
+        - "nis2:Art.21.2.d"
+      scope: "All external providers of products, services, or processes that impact QMS/ISMS scope, with focus on critical suppliers"
+      principles_fr:
+        - "Tout fournisseur en scope est soumis à due diligence avant contractualisation"
+        - "Les contrats incluent des clauses de sécurité standard (data, incident, audit, sortie)"
+        - "Un registre des fournisseurs est tenu avec criticité et dates de revue"
+        - "Les fournisseurs critiques sont revus annuellement (audit léger ou attestation)"
+        - "Les services cloud font l'objet d'une évaluation spécifique (A.5.23)"
+        - "Une stratégie de sortie est définie pour chaque fournisseur critique"
+      raci:
+        accountable: "Direction des achats / DSI"
+        responsible: ["Procurement Manager", "RSSI"]
+        consulted: ["Legal", "Process Owners", "DPO"]
+        informed: ["Direction", "Auditeur"]
+      numerical_commitments:
+        - metric: "% fournisseurs critiques avec due diligence à jour (< 12 mois)"
+          target: "100%"
+        - metric: "Délai de notification incident fournisseur"
+          target: "≤ 24h (clause contractuelle)"
+        - metric: "Cycle de revue fournisseurs critiques"
+          target: "Annuel"
+        - metric: "Couverture clauses de sécurité dans contrats critiques"
+          target: "100%"
+
+  procedures:
+    - title_fr: "Procédure de due diligence et contractualisation fournisseur"
+      title_en: "Supplier due diligence and contracting procedure"
+      derived_from: "Politique de gestion des fournisseurs et tiers"
+      steps:
+        - id: S1
+          actor: "Process Owner"
+          action: "Exprimer le besoin et identifier des fournisseurs candidats"
+          output: "Liste de candidats + spécifications"
+          sla: "Selon projet"
+        - id: S2
+          actor: "Procurement Manager"
+          action: "Classifier la criticité du fournisseur (haute / moyenne / faible)"
+          input: "Spécifications + données traitées + dépendance"
+          output: "Classification documentée"
+          sla: "≤ 5 jours"
+        - id: S3
+          actor: "Procurement Manager + RSSI"
+          action: "Conduire la due diligence (questionnaire, certifications, références)"
+          input: "Classification S2"
+          output: "Rapport de due diligence"
+          sla: "≤ 15 jours (haute), ≤ 30 jours (moyenne/faible)"
+        - id: S4
+          actor: "Legal"
+          action: "Rédiger contrat avec clauses obligatoires"
+          input: "Template contractuel + spécificités"
+          output: "Contrat draft"
+          sla: "≤ 10 jours"
+        - id: S5
+          actor: "Direction"
+          action: "Approuver et signer le contrat"
+          sla: "≤ 5 jours"
+        - id: S6
+          actor: "Procurement Manager"
+          action: "Enregistrer dans le registre fournisseurs avec dates de revue"
+          output: "Entrée registre"
+          sla: "≤ 2 jours après signature"
+        - id: S7
+          actor: "Process Owner"
+          action: "Suivre la performance et la conformité du fournisseur"
+          sla: "Continu (revue annuelle)"
+        - id: S8
+          actor: "Procurement Manager"
+          action: "Revue annuelle (KPI + audit léger + reconfirmation)"
+          output: "Rapport revue + décision continuation"
+          sla: "Annuel"
+
+      decision_points:
+        - id: DP1
+          location: "Après S3"
+          condition: "Due diligence acceptable ?"
+          if_yes: "Aller à S4 (contractualisation)"
+          if_no: "Rejeter ou demander remediation"
+
+  bpmn:
+    - title: "Workflow Supplier Onboarding & Lifecycle"
+      start_event: "Besoin de fournisseur identifié"
+      end_events: ["Fournisseur onboardé + actif", "Candidat rejeté", "Fournisseur offboardé"]
+      lanes:
+        - "Process Owner"
+        - "Procurement Manager"
+        - "RSSI"
+        - "Legal"
+        - "Direction"
+      tasks_count: 8
+      gateway_count: 1
+      timer_events: ["Cycle revue annuelle"]
+
+  kpis:
+    - id: KPI-SUP-01
+      title_fr: "% fournisseurs critiques avec due diligence < 12 mois"
+      target: "100%"
+      unit: percent
+      threshold_yellow: 95
+      threshold_red: 90
+      source_event: "Supplier register"
+      measurement_frequency: quarterly
+      pdca_loop:
+        plan: "Annual review schedule"
+        do: "Tracked in supplier register"
+        check: "Quarterly review with procurement"
+        act: "If <95% → escalation + accelerated review"
+
+    - id: KPI-SUP-02
+      title_fr: "% contrats critiques avec clauses sécurité standard"
+      target: "100%"
+      unit: percent
+      source_event: "Contract review checklist"
+      measurement_frequency: per_contract
+
+    - id: KPI-SUP-03
+      title_fr: "Nombre incidents fournisseurs notifiés / mois"
+      target: "Trend stable, action si pic"
+      unit: count
+      source_event: "Supplier incident register"
+      measurement_frequency: monthly
+
+    - id: KPI-SUP-04
+      title_fr: "Délai moyen notification incident fournisseur"
+      target: "≤ 24h"
+      unit: hours
+      threshold_yellow: 30
+      threshold_red: 48
+      source_event: "Incident timestamps"
+      measurement_frequency: per_event
+
+audit_readiness:
+  iso9001-2026:
+    - "External providers register present"
+    - "Type and extent of controls documented per supplier"
+    - "Communication of requirements traceable (contracts)"
+  iso27001-2022:
+    - "Supplier security requirements documented (A.5.19)"
+    - "Contracts contain agreed security requirements (A.5.20)"
+    - "Supplier monitoring evidence (A.5.22)"
+    - "Cloud services evaluation (A.5.23) when applicable"
+  nis2:
+    - "Supply chain security risks assessed (Art. 21.2.d)"
+    - "Critical suppliers identified and contractualized with notification clauses"
+    - "Cross-link with risk register"
+
+conflict_resolutions:
+  - issue: "ISO 27001 A.5.21 (ICT supply chain) more specific than ISO 9001 8.4 (general external providers)"
+    resolution: "ICT suppliers fall under both A.5.21 (security) and 8.4 (quality); apply both with primary lens by domain"
+
+  - issue: "NIS2 doesn't define 'critical supplier' precisely; ISO 27001 leaves to organization"
+    resolution: "Define criticality matrix in policy: data sensitivity × dependency × substitution difficulty"
+
+  - issue: "Cloud services (A.5.23) overlap with general supplier mgmt"
+    resolution: "Cloud services treated as a supplier subset with specific evaluation grid (CSP, region, certifications, contract)"
