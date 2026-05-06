@@ -13,6 +13,7 @@ import { db, schema } from "@egide/db";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { presignTenantUpload } from "../../shared/s3.js";
 import { protectedProcedure, router } from "../../trpc.js";
 
 const uploadResponseSchema = z.object({
@@ -69,29 +70,35 @@ export const complianceRouter = router({
    * to MinIO/S3 ; on completion, the client calls compliance.classify
    * with the returned storageKey.
    *
-   * Status: scaffold — returns a stub URL until S3 client is wired (M3).
+   * The signed URL embeds tenantId in the key prefix so a leaked URL
+   * cannot be used to write into another tenant's namespace.
    */
   requestUpload: protectedProcedure
     .input(
       z.object({
         filename: z.string().min(1).max(255),
-        contentType: z.string().min(3),
+        contentType: z
+          .string()
+          .min(3)
+          .regex(/^[a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+$/, "invalid mime type"),
         sizeBytes: z.number().int().min(1).max(50 * 1024 * 1024),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.tenantId) throw new TRPCError({ code: "UNAUTHORIZED" });
-      ctx.logger.info({ filename: input.filename }, "compliance.requestUpload");
+      ctx.logger.info(
+        { filename: input.filename, contentType: input.contentType },
+        "compliance.requestUpload",
+      );
 
-      const storageKey = `tenants/${ctx.tenantId}/uploads/${crypto.randomUUID()}/${input.filename}`;
-      // TODO M3: sign a real S3 PUT URL via @aws-sdk/client-s3
-      const uploadUrl = `${ctx.env.S3_ENDPOINT ?? "http://localhost:9090"}/${storageKey}`;
-
-      return uploadResponseSchema.parse({
-        uploadUrl,
-        storageKey,
-        expiresIn: 3600,
+      const presigned = await presignTenantUpload(ctx.env, {
+        tenantId: ctx.tenantId,
+        filename: input.filename,
+        contentType: input.contentType,
+        sizeBytes: input.sizeBytes,
       });
+
+      return uploadResponseSchema.parse(presigned);
     }),
 
   /**

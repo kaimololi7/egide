@@ -19,11 +19,13 @@ const envSchema = z.object({
   // NATS
   NATS_URL: z.string().default("nats://localhost:4222"),
 
-  // S3
+  // S3 (MinIO in dev, Scaleway/OVH in prod)
   S3_ENDPOINT: z.string().optional(),
+  S3_REGION: z.string().default("eu-west-1"),
   S3_ACCESS_KEY: z.string().optional(),
   S3_SECRET_KEY: z.string().optional(),
   S3_BUCKET: z.string().default("egide-evidence"),
+  S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
 
   // Auth (Better-Auth)
   BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be ≥32 chars"),
