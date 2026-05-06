@@ -1,0 +1,27 @@
+# OSV-Scanner configuration — Egide v0.1.0
+#
+# Vulnerabilities listed below are dev-time / build-chain only (esbuild,
+# postcss, vite are pulled transitively by Next.js dev server and are
+# never present in production runtime images, which use bun build output
+# served from a hardened distroless base — see deploy/docker/).
+#
+# Runtime vulnerabilities are caught by trivy-fs + trivy-image jobs in CI
+# (cf. ADR 016). These ignores are scoped to the lockfile-only deps-scan
+# job and must be reviewed at every minor release.
+#
+# Schema: https://google.github.io/osv-scanner/configuration/
+
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+ignoreUntil = 2026-08-01
+reason = "esbuild dev-server CORS issue; transitive via Next.js/Vite tooling, not present in production runtime images."
+
+[[IgnoredVulns]]
+id = "GHSA-qx2v-qp2m-jg93"
+ignoreUntil = 2026-08-01
+reason = "postcss line-return parsing; build-time only, no untrusted CSS in our pipeline."
+
+[[IgnoredVulns]]
+id = "GHSA-4w7w-66w2-5vf9"
+ignoreUntil = 2026-08-01
+reason = "vite dev-server middleware; not used at runtime, Next.js handles serving."

@@ -1,6 +1,6 @@
 module github.com/egide/egide/services/compiler
 
-go 1.23
+go 1.24.13
 
 require github.com/labstack/echo/v4 v4.13.3
 
