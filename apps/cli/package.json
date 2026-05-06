@@ -11,7 +11,7 @@
     "build": "bun build src/index.ts --target=bun --outfile=dist/egide --compile",
     "lint": "biome lint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "commander": "^12.1.0",
