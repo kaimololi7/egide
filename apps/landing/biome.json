@@ -1,4 +1,9 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
-  "extends": ["../../biome.json"]
+  "files": {
+    "ignore": [".next/**", "node_modules/**", "out/**", ".turbo/**", "next-env.d.ts"]
+  },
+  "linter": { "enabled": true, "rules": { "recommended": true } },
+  "formatter": { "enabled": false },
+  "vcs": { "enabled": false }
 }
