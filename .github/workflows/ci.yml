@@ -96,7 +96,7 @@ jobs:
         # Lockfile-only mode avoids govulncheck source loading mismatches.
         # Full source scanning (with --recursive) is performed by trivy
         # filesystem scan in the trivy-fs job below.
-        run: ./osv-scanner --recursive --skip-git --no-ignore ./
+        run: ./osv-scanner scan source --recursive ./
 
   # ──────────────────────────────────────────────────────────
   # TypeScript: lint + typecheck + tests
