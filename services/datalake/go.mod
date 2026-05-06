@@ -1,3 +1,3 @@
 module github.com/egide/egide/services/datalake
 
-go 1.24.13
+go 1.25.9

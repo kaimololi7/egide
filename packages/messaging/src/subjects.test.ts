@@ -4,8 +4,9 @@ import { isEgideSubject, parseSubject, Subjects } from "./subjects.js";
 describe("Subjects", () => {
   it("exposes versioned subject namespace", () => {
     const sample = Object.values(Subjects)[0];
+    expect(sample).toBeDefined();
     expect(typeof sample).toBe("string");
-    expect(sample.startsWith("egide.v1.")).toBe(true);
+    expect(sample?.startsWith("egide.v1.")).toBe(true);
   });
 
   it("validates Egide subject format", () => {

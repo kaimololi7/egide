@@ -1,13 +1,11 @@
 # OSV-Scanner configuration — Egide v0.1.0
 #
-# Vulnerabilities listed below are dev-time / build-chain only (esbuild,
-# postcss, vite are pulled transitively by Next.js dev server and are
-# never present in production runtime images, which use bun build output
-# served from a hardened distroless base — see deploy/docker/).
+# These ignores are scoped to the lockfile-only deps-scan job and must
+# be reviewed at every minor release.
 #
-# Runtime vulnerabilities are caught by trivy-fs + trivy-image jobs in CI
-# (cf. ADR 016). These ignores are scoped to the lockfile-only deps-scan
-# job and must be reviewed at every minor release.
+# Runtime vulnerabilities are caught by trivy-fs + trivy-image jobs in
+# CI (cf. ADR 016). Vulnerabilities below are dev-time / build-chain
+# only and are not present in production runtime images.
 #
 # Schema: https://google.github.io/osv-scanner/configuration/
 
@@ -25,30 +23,3 @@ reason = "postcss line-return parsing; build-time only, no untrusted CSS in our 
 id = "GHSA-4w7w-66w2-5vf9"
 ignoreUntil = 2026-08-01
 reason = "vite dev-server middleware; not used at runtime, Next.js handles serving."
-
-# Go stdlib CVEs fixed only in go 1.25.x. We pin to 1.24.13 (current
-# stable LTS-track for our toolchain). Track upgrade to 1.25 in M2.
-[[IgnoredVulns]]
-id = "GO-2026-4601"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.8; toolchain pinned to 1.24.13 until M2 (cf. ADR 003)."
-[[IgnoredVulns]]
-id = "GO-2026-4602"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.8; toolchain pinned to 1.24.13 until M2."
-[[IgnoredVulns]]
-id = "GO-2026-4865"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.9; toolchain pinned to 1.24.13 until M2."
-[[IgnoredVulns]]
-id = "GO-2026-4870"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.9; toolchain pinned to 1.24.13 until M2."
-[[IgnoredVulns]]
-id = "GO-2026-4946"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.9; toolchain pinned to 1.24.13 until M2."
-[[IgnoredVulns]]
-id = "GO-2026-4947"
-ignoreUntil = 2026-08-01
-reason = "Go stdlib CVE fixed in 1.25.9; toolchain pinned to 1.24.13 until M2."
