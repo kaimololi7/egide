@@ -1,7 +1,10 @@
 # Target-agnostic Intent (TAI) — Specification draft v0.1
 
-> Status: **Draft**. The first stable spec lands when the policy compiler ships
-> Rego + Ansible generators (M2–M3 of the roadmap).
+> Status: **Draft v0.1**. First stable spec (v1.0) lands when the policy
+> compiler ships the Rego generator at MVP (M5 — cf. ADR 005 amendment).
+> Ansible target arrives at M6 with possible v1.1 refinements.
+>
+> Last update: 2026-05-05.
 
 The TAI is the intermediate representation that connects the **human pyramid**
 (directive → policy → procedure → process → KPI) to the **executable artifacts**
@@ -189,15 +192,39 @@ M12+. The Intent format is designed so that a partial recovery is still
 useful: a recovered Intent without `required_state` but with valid
 `source_trace` is recordable as an "imported" Intent.
 
-## Open questions (for v0.2)
+## Open questions (resolved or deferred for v0.2 / v1.x)
 
-- Do we bake **time-windowed assertions** into the language? (e.g., "every
-  Monday at 02:00 UTC, this check must run")
-- Do we expose **cross-resource references** (e.g., "every database must have
-  at least one alert subscriber that has an active on-call rotation")? This
-  would push us closer to a full graph query language. Probably not in v0.2.
-- Do we introduce a `transform` block for **target-specific code injection**?
-  Risk: mini-DSL within DSL. Lean toward "no, use a custom plugin instead."
+| # | Question | v0.2 stance | Rationale |
+|---|---|---|---|
+| 1 | OR semantics (`any_of` block) | **In v0.2** | Half of compliance rules are "A or B suffices" ; cannot ship without |
+| 2 | Cross-resource references (e.g., "every DB must have on-call subscriber") | **Deferred to v1.1** | Pushes toward graph query language ; needs design work |
+| 3 | Time-windowed assertions ("every Monday 02:00 UTC") | **Deferred to v1.1** | Useful for KPIs but expressible via cron + audit log for now |
+| 4 | `transform` block for target-specific code injection | **Rejected** | Mini-DSL within DSL ; use custom generator plugin instead |
+| 5 | Streaming compilation events (progress per generator) | **In v0.2** | UX requirement for the technical persona (cf. ADR 013) |
+| 6 | Signed Intent IR documents | **In v1.0** | Alignment with audit chain ; Ed25519 in Enterprise (ADR 014) |
+
+## CLI invocation (cf. ADR 013)
+
+The technical persona uses the CLI :
+
+```bash
+# Generate compiled Rego from an Intent
+egide compile rego --intent intent_db_backup_required --output bundles/
+
+# Run fixtures against the compiled artifact
+egide compile test --intent intent_db_backup_required --target rego
+
+# Validate a TAI Intent against the schema
+egide intent validate path/to/intent.json
+
+# Inspect intent → artifact provenance
+egide intent show intent_db_backup_required --with-artifacts
+
+# List intents stale due to upstream pyramid mutation
+egide intent list --status stale
+```
+
+CLI parity with web UI is mandatory.
 
 ## Versioning the spec itself
 

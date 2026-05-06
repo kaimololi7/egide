@@ -4,6 +4,14 @@ This document describes the runtime architecture of Egide, its data flows, and
 the contract between components. ADRs in `adr/` capture the **why**; this
 document captures the **what** and **how**.
 
+> **Last update**: 2026-05-05. Reflects ADR 006 (graph), 007 (RAG), 008
+> (queue), 011 (agent strategy), 012 (terminology), 013 (persona).
+>
+> **Vocabulary** (cf. ADR 012): "agent" = `edge/agent` Go binary on customer
+> hosts ; "AI worker" = Python process running an LLM agent loop in
+> `agents/*` ; "collector" = third-party API adapter in
+> `services/pipeline/connectors/`.
+
 ## High-level diagram
 
 ```
@@ -83,9 +91,12 @@ document captures the **what** and **how**.
 ### `services/validator` (Go)
 
 - Ports the 25 deterministic rules from `process-pyramid` to native Go.
-- Adds RDF + SHACL evaluation when the tenant enables it (Professional+).
+- Reads the pyramid graph from PG via `pgx` and recursive CTE queries
+  (cf. ADR 006). No graph DB at MVP.
 - Returns a `ValidationReport` with errors and warnings.
 - Exposed via gRPC and called by the API on every pyramid mutation.
+- SHACL is **post-MVP** (ADR 003 amended). When a Pro+ customer demands
+  W3C SHACL, a pyshacl Python sidecar is added.
 
 ### `services/compiler` (Go) — **the moat**
 
@@ -117,24 +128,39 @@ document captures the **what** and **how**.
 - Returns a structured JSON of sections, tables, references; downstream
   agents do the GRC mapping.
 
-### `agents/common` (Python)
+### `agents/common` (Python AI worker shared library)
 
-- Ported `BaseAgent` from `aegis-platform`.
-- Adapter to `packages/llm-router`: a `LLMClient` that POSTs to the API gateway
-  rather than calling Anthropic directly. Centralizes provider choice and audit.
-- Provides circuit breaker, retry with exponential backoff, structured logging.
+- **PydanticAI + Instructor** as agent framework (cf. ADR 011).
+- Custom `CircuitBreaker` ported from `aegis-platform` for provider failure isolation.
+- `LLMClient` adapter: POSTs to `apps/api` LLM Router or reads NATS subjects
+  for streamed embed batches.
+- Audit trail wrapper writes every call to `llm_calls` (tenant_id, pyramid_id,
+  journey_phase, worker_name, cache_hit).
+- Hallucination guard: post-processes any tool output containing anchor
+  strings against `ontology_chunks.anchor_ref`.
 
-### `agents/compliance` (Python)
+### `agents/compliance` (Python AI worker — multi-step super-agent)
 
-- Real implementation (replacing the empty `aegis-platform` stub).
-- Tasks: gap analysis vs framework, SoA generation, control mapping,
-  redundancy detection in dropped documents (J1).
+- One PydanticAI `Agent` with ~10 internal **tools** (cf. ADR 011 Strategy B):
+  `search_anchors`, `classify_chunk`, `draft_policy`, `draft_procedure`,
+  `draft_bpmn`, `draft_kpi`, `gap_analysis`, `validate`, `judge_coherence`,
+  `propose_fix`.
+- Each tool is a typed Python function ; tested in isolation and end-to-end
+  via the eval framework (ADR 009).
+- Per-tool routing profile (`extraction`, `classification`, `generation`,
+  `judge`, `synthesis`) drives provider selection in the LLM Router.
 
-### `agents/orchestrator` (Python)
+### `agents/orchestrator` (Python deterministic workflow runner)
 
-- Multi-step pyramid generation: directive → policies → procedures → BPMN → KPI.
-- Each step validates with `services/validator` before proceeding.
-- Falls back to deterministic templates if `EGIDE_AI_MODE=template_only`.
+- **Plain Python state machine**, NOT a PydanticAI agent (orchestration is
+  deterministic, not LLM-driven).
+- Listens on NATS subjects (`egide.docs.uploaded`, `egide.pyramid.requested`,
+  …), drives the multi-phase J1 workflow, calls `agents/compliance` tools or
+  the validator/compiler as needed.
+- Falls back to deterministic templates seeded from
+  `ontologies/clusters/*.yaml` if `EGIDE_AI_MODE=template_only`.
+- Streams progress events back via NATS (`egide.pyramid.progress`) for the
+  web UI to render.
 
 ### `edge/agent` (Go)
 
@@ -169,21 +195,39 @@ document captures the **what** and **how**.
 
 | Store | Role | Why |
 |---|---|---|
-| PostgreSQL 17 | Operational data: tenants, users, pyramids, RBAC | ACID, well-known, sovereign-friendly (PG is everywhere) |
+| PostgreSQL 17 + `pgvector` + (Pro+ optional) AGE | Operational data, pyramid graph (recursive CTE + JSONB cf. ADR 006), normative RAG (cf. ADR 007) | One store; sovereign-friendly; air-gapped capable |
 | ClickHouse | Audit trail, telemetry, KPI history | 10–100× faster than PG for time-series; reused from `aegis-platform` |
 | S3-compatible | Evidence blobs (PDFs, OSCAL exports, signed snapshots) | MinIO for on-prem, Scaleway/OVH for sovereign cloud |
-| Redis | Queues, LLM response cache, sessions | Standard caching layer |
+| Redis | LLM response cache, sessions, short TTL state | Standard caching layer (NATS handles queues — see below) |
 
-### Event bus (deferred, from M5+)
+### RAG normative layer (cf. ADR 007)
 
-When agents and pipeline volume grows, introduce **NATS JetStream** (chosen over
-Kafka/Redpanda for simpler ops in mid-market on-prem). Subjects:
+- `ontology_chunks` table in PG holds chunked cluster YAMLs with two
+  embedding columns (Mistral 1024-dim, nomic 768-dim).
+- HNSW indexes on each embedding column.
+- Wrapped by a thin `apps/api/src/rag/` module — not a separate service.
+- Used by `agents/compliance` tools (`search_anchors`) and by the
+  hallucination guard (Q01).
 
-- `egide.pyramid.mutations` — every artifact change
-- `egide.audit.events` — events from agents and integrations
-- `egide.compliance.findings` — drift, gaps, alerts
-- `egide.compiler.results` — compilation outcomes
-- `egide.governance.actions` — directive signatures, approvals, exceptions
+### Event bus: NATS JetStream from M1 (cf. ADR 008)
+
+NATS JetStream is the single message bus from sprint S1 — it is **not**
+deferred to M5+. Cross-language native (TS + Python + Go), single binary,
+~30 MB RAM, Apache 2.0.
+
+Subjects (prefix `egide.`):
+
+- `egide.docs.uploaded` / `egide.docs.extracted`
+- `egide.pyramid.requested` / `egide.pyramid.generated` / `egide.pyramid.mutations` / `egide.pyramid.progress`
+- `egide.compiler.requested` / `egide.compiler.completed`
+- `egide.audit.events`
+- `egide.compliance.findings`
+- `egide.governance.actions` (approvals, signatures)
+- `egide.llm.calls` (audit fan-out)
+- `egide.dlq` (failed handlers after MaxDeliver)
+
+Streams: `JOBS` (work queue, ack), `EVENTS` (replayable 7d), `FINDINGS`
+(replayable 30d).
 
 ## Multi-tenancy
 
@@ -217,9 +261,37 @@ When an artifact mutates, the API gateway:
    - Children inherit numerical commitments and SLAs (downward).
    - Parent re-validation is triggered (upward).
    - Compiled policies referencing affected nodes are marked `stale`.
-   - `services/compiler` recompiles affected artifacts.
+   - `services/compiler` recompiles affected artifacts (queued via NATS).
 3. Persists the new version with parent hash, so audit trail is verifiable.
 4. Publishes mutation to `egide.pyramid.mutations` for any subscribers.
 
 This is the most expensive operation; LLM-as-judge is opt-in to keep p95 latency
 under 5 seconds for non-AI mutations.
+
+## Long-running journeys: streaming UX
+
+J1 (drop docs → pyramide) takes 5–15 minutes. The web UI does not block:
+
+1. Web → API → publish `egide.pyramid.requested`.
+2. `agents/orchestrator` consumes, drives the workflow.
+3. Each phase emits `egide.pyramid.progress` with `{ phase, step, total, payload }`.
+4. API streams progress to the web client via Server-Sent Events.
+5. UI renders a live timeline ("phase 3/7 — analyzing control A.5.24").
+
+Same pattern for compiler runs, audit exports, and bulk imports.
+
+## CLI as a first-class interface (cf. ADR 013)
+
+The MVP persona is technical. `apps/cli/` (TypeScript, Bun-built single
+binary) ships in M1 alongside the web UI. Every action available in both:
+
+```bash
+egide pyramid generate --frameworks iso27001,nis2 --input docs/
+egide pyramid validate <pyramid-id>
+egide compile rego <intent-id> --output bundles/
+egide approval list --pending
+egide ontology reindex
+```
+
+The CLI calls the same tRPC API as the web. Documentation treats it as a
+primary interface, not a power-user feature.
