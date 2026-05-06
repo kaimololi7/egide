@@ -1,5 +1,8 @@
 # Egide — Editions matrix
 
+> **Last update**: 2026-05-05 — reflects ADR 005 amendment (Rego-only at
+> MVP, Ansible at M6) and ADR 013 (technical persona priority).
+
 Three editions sharing **one codebase**. Edition gating happens at runtime via
 `EGIDE_EDITION` env and signed license key (Ed25519). See ADR 002.
 
@@ -41,21 +44,25 @@ Three editions sharing **one codebase**. Edition gating happens at runtime via
 
 ### Policy-as-Code compiler (J3 — the moat)
 
-| Target | Community | Pro | Enterprise |
-|---|---|---|---|
-| Rego / OPA Gatekeeper | yes | yes | yes |
-| Ansible playbooks | yes | yes | yes |
-| Kyverno | no | yes | yes |
-| CIS Benchmarks | no | yes | yes |
-| AWS Config rules | no | yes | yes |
-| Azure Policy | no | yes | yes |
-| Scaleway IAM | no | yes | yes |
-| GCP Org Policy | no | yes | yes |
-| Falco runtime detection | no | yes | yes |
-| Terraform Sentinel | no | no | yes |
-| Custom DSL plugins | no | no | yes |
-| Per-target test fixtures + auto-validation | yes | yes | yes |
-| Artifact signing (Ed25519) | no | no | yes |
+> Per ADR 005 amendment, MVP ships Rego only. Ansible at M6, CIS at M7-M9,
+> Kyverno at M10-M12, cloud targets and Falco M13+. Terraform Sentinel is
+> dropped (BSL); replaced by **CloudFormation Guard / `regula`** (Apache 2.0).
+
+| Target | Community | Pro | Enterprise | Lands at |
+|---|---|---|---|---|
+| Rego / OPA / Gatekeeper | yes | yes | yes | **MVP M5** |
+| Ansible playbooks | yes | yes | yes | M6 |
+| CIS Benchmarks | no | yes | yes | M7-M9 |
+| Kyverno | no | yes | yes | M10-M12 |
+| AWS Config rules | no | yes | yes | M13+ |
+| Azure Policy | no | yes | yes | M13+ |
+| Scaleway IAM | no | yes | yes | M13+ |
+| GCP Org Policy | no | yes | yes | M13+ |
+| Falco runtime detection | no | yes | yes | M13+ |
+| CloudFormation Guard / regula (Terraform-time) | no | no | yes | M17+ |
+| Custom plugin generators | no | no | yes | M17+ |
+| Per-target test fixtures + auto-validation | yes | yes | yes | from MVP |
+| Artifact signing (Ed25519) | no | no | yes | M13+ |
 
 ### LLM Router (J8)
 
@@ -110,12 +117,13 @@ Three editions sharing **one codebase**. Edition gating happens at runtime via
 
 | Feature | Community | Pro | Enterprise |
 |---|---|---|---|
-| Email + password | yes | yes | yes |
-| OAuth (GitHub, Google) | yes | yes | yes |
-| SSO via Supabase | no | yes | yes |
-| SAML 2.0 / OIDC enterprise SSO | no | no | yes |
+| Email + password (Better-Auth) | yes | yes | yes |
+| OAuth (GitHub, Google, GitLab) | yes | yes | yes |
+| Magic link | yes | yes | yes |
+| SAML 2.0 / OIDC via Authentik | no | no | yes |
 | SCIM provisioning | no | no | yes |
 | RBAC (admin / process_owner / auditor / operator / viewer) | basic (3 roles) | full (5 roles) | full + custom |
+| WebAuthn-bound approval signatures | no | no | yes |
 
 ### Deployment
 
@@ -149,6 +157,16 @@ Three editions sharing **one codebase**. Edition gating happens at runtime via
 | Named CSM | no | no | yes |
 | Onboarding workshop | no | optional (paid) | included |
 | Indemnification | no | optional | included |
+
+### CLI and developer ergonomics (cf. ADR 013)
+
+| Feature | Community | Pro | Enterprise |
+|---|---|---|---|
+| `egide` CLI (parity with web UI) | yes | yes | yes |
+| Git-friendly YAML/JSON exports for every artifact | yes | yes | yes |
+| CI integrations (GitHub Actions, GitLab CI templates) | yes | yes | yes |
+| Webhook notifications | yes | yes | yes |
+| Programmatic API (tRPC + REST adapter) | yes | yes | yes |
 
 ## Edition gating implementation
 

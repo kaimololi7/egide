@@ -1,5 +1,9 @@
 # Egide — Migration plan from `process-pyramid` and `aegis-platform`
 
+> **Last update**: 2026-05-05 — reflects ADR 011 (PydanticAI + Instructor
+> replace direct Anthropic SDK), ADR 008 (NATS from M1), ADR 012
+> (terminology agents/AI workers/collectors).
+
 Two prior personal projects are frozen as archive. This document specifies
 **file-by-file** what migrates into Egide, what gets ported to a new language,
 and what stays where it is.
@@ -141,33 +145,45 @@ mechanical translation.
 
 ## From `aegis-platform`
 
-### Agent framework — gold, copy as-is
+### Agent framework — keep CircuitBreaker, replace orchestration with PydanticAI
+
+> ADR 011 supersedes the original "copy BaseAgent as-is" plan. PydanticAI
+> + Instructor handle agent loop, tool calling protocol harmonization,
+> and structured outputs. We keep only the orthogonal pieces.
 
 | Source path | Egide path | Action | Notes |
 |---|---|---|---|
-| `agents/common/` (~700 LOC of `BaseAgent` + `CircuitBreaker` + tool support) | `agents/common/` | COPY | Adapter to LLM Router replaces direct Anthropic SDK call |
-| `agents/common/src/agent.py` (BaseAgent) | same | COPY then EDIT | Replace `import anthropic` with `from llm_router_client import LLMClient` |
-| `agents/common/src/circuit_breaker.py` | same | COPY | Reusable |
-| `agents/common/src/tools.py` | same | COPY | Tool execution framework |
-| `agents/common/pyproject.toml` | same | COPY then EDIT | Adjust deps |
+| `agents/common/src/circuit_breaker.py` | `agents/common/src/circuit_breaker.py` | COPY | Provider failure isolation, framework-agnostic |
+| `agents/common/src/agent.py` (BaseAgent — direct Anthropic SDK) | KEEP in archive | KEEP | Replaced by PydanticAI Agent + custom adapter |
+| `agents/common/src/tools.py` (custom tool harmonization) | KEEP in archive | KEEP | PydanticAI `@agent.tool` decorator covers this |
+| `agents/common/pyproject.toml` | `agents/common/pyproject.toml` | REWRITE | New deps: `pydantic-ai`, `instructor`, `nats-py`, `httpx`, drop `anthropic` direct |
+| (new) `agents/common/src/llm_router_client.py` | NEW | NEW | HTTP/NATS adapter to `apps/api` LLM Router (cf. ADR 004 + 008) |
+| (new) `agents/common/src/audit.py` | NEW | NEW | Wraps tool calls to write `llm_calls` rows (tenant_id, pyramid_id, journey_phase, worker_name, cache_hit) |
+| (new) `agents/common/src/hallucination_guard.py` | NEW | NEW | Verifies anchor strings against `ontology_chunks.anchor_ref` (Q01) |
+| (new) `agents/common/src/nats_client.py` | NEW | NEW | NATS JetStream subscribe/publish helpers |
 
-**Effort**: 2–3 days (copy + adapter rewrite for LLM router).
+**Effort**: 1 week (CircuitBreaker copy is trivial ; PydanticAI scaffolding
+is the bulk).
 
-### Agents — partial use
+### AI workers — partial use (renamed per ADR 012)
+
+> Vocabulary: these are now called **AI workers** (Python LLM-driven
+> processes), not "agents". The directory name stays `agents/` for
+> ergonomic reasons.
 
 | Source path | Egide path | Action | Notes |
 |---|---|---|---|
 | `agents/triage/` (168 LOC, real) | KEEP in archive | KEEP | SOC-specific |
 | `agents/investigation/` (155 LOC, real) | KEEP in archive | KEEP | SOC-specific |
 | `agents/anomaly-detector/` (133 LOC, real) | KEEP in archive | KEEP | SOC-specific |
-| `agents/compliance/` (35 LOC, stub) | `agents/compliance/` | REWRITE | Egide implements this for real (J1 + framework mapping) |
-| `agents/posture/` (46 LOC, basic) | LATER | LATER | Useful pattern when agent telemetry comes online (M5+) |
+| `agents/compliance/` (35 LOC, stub) | `agents/compliance/` | REWRITE | Egide multi-step PydanticAI super-agent (ADR 011 Strategy B) with ~10 tools |
+| `agents/posture/` (46 LOC, basic) | LATER | LATER | Useful pattern when J2 telemetry comes online (M7+) |
 | `agents/identity/` (35 LOC, stub) | LATER | LATER | |
 | `agents/vulnerability/` (35 LOC, stub) | LATER | LATER | |
 | `agents/data-quality/` (26 LOC, stub) | LATER | LATER | |
-| `agents/executive-summary/` (26 LOC, stub) | LATER | LATER | Could become J6 (board summary generator) |
+| `agents/executive-summary/` (26 LOC, stub) | LATER | LATER | Could become J6 (board summary generator, M17+) |
 | `agents/ai-safety/` (26 LOC, stub) | LATER | LATER | |
-| `agents/ai-orchestrator/` (26 LOC, stub) | `agents/orchestrator/` | REWRITE | Egide rewrites for pyramid generation workflow |
+| `agents/ai-orchestrator/` (26 LOC, stub) | `agents/orchestrator/` | REWRITE | Egide plain-Python state machine driving J1 phases via NATS (NOT a PydanticAI agent — orchestration is deterministic) |
 
 ### Services Go — pipeline + datalake + edge
 
@@ -213,7 +229,7 @@ mechanical translation.
 
 | Source path | Egide path | Action | Notes |
 |---|---|---|---|
-| `libs/go/kafka/` (if exists) | `libs/go/messaging/` | COPY then EDIT | Replace Kafka/Redpanda with NATS in Egide; same wrapper pattern |
+| `libs/go/kafka/` (if exists) | `libs/go/nats/` | REWRITE | NATS JetStream from M1 (ADR 008), not Kafka ; nats.go client (Apache 2.0, official Synadia) |
 | `libs/go/observability/` | `libs/go/observability/` | COPY | slog + Prometheus + OTel |
 | `libs/go/ocsf/` | KEEP in archive | KEEP | OCSF is SOC-specific; Egide has its own schema |
 
@@ -245,13 +261,15 @@ mechanical translation.
 
 ## Migration order (recommended)
 
-1. **Week 1**: ontologies + DB schema + skills (low-risk warmup).
-2. **Week 2**: agent framework (`agents/common/`) + LLM router foundation.
-3. **Weeks 3–4**: validator port to Go (mechanical, builds testing skill in Go).
-4. **Weeks 5–6**: extractor (Python service) + first compliance agent for J1.
-5. **Weeks 7–10**: policy compiler from scratch in Go (the moat — most novel code).
-6. **Weeks 11–14**: pipeline + datalake refactor (only when J2 starts at M5).
-7. **Weeks 15+**: edge agent refactor (M5).
+1. **Week 1**: ontologies + DB schema + skills (low-risk warmup) — DONE in M0.
+2. **Week 2**: NATS deployment + LLM router foundation + Better-Auth.
+3. **Weeks 3–4**: `agents/common` (CircuitBreaker copy + PydanticAI scaffolding + LLM router adapter + hallucination guard).
+4. **Weeks 5–8**: validator port to Go (PG recursive CTE per ADR 006).
+5. **Weeks 9–12**: extractor (Python) + RAG ingestion + first 5 tools of `agents/compliance` for J1.
+6. **Weeks 13–20**: policy compiler from scratch in Go (Rego only at MVP, ADR 005 amendment) — the moat.
+7. **Weeks 21–28**: Ansible target + public release prep.
+8. **Weeks 29+**: pipeline + datalake refactor (when J2 starts at M7+).
+9. **Weeks 33+**: edge agent refactor (M7+).
 
 ## How to track migration
 
