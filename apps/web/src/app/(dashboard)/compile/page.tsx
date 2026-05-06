@@ -7,7 +7,7 @@
 "use client";
 
 import { useState } from "react";
-import { CompiledArtifact, type Artifact, type TestResult } from "../../../components/CompiledArtifact.js";
+import { CompiledArtifact, type Artifact, type TestResult } from "../../../components/CompiledArtifact";
 
 // ── Types from API ────────────────────────────────────────────────────────────
 
