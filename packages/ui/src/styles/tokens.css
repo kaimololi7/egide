@@ -1,0 +1,158 @@
+/*
+ * Egide — Design tokens (cf. ADR 017 + docs/design-system.md).
+ *
+ * Single source of truth for visual variables. Consumed by apps/web,
+ * the landing page, and the dashboard. Never override these values
+ * in component CSS — extend the palette via additional variables if
+ * absolutely necessary, with an ADR amendment.
+ *
+ * Dark mode by default. Light mode (post-M5) overrides under .light.
+ */
+
+:root,
+:root.dark {
+  /* ── Color: surfaces ──────────────────────────────────── */
+  --egide-color-bg: #0B0E0D;
+  --egide-color-surface: #131816;
+  --egide-color-surface-raised: #1B2220;
+  --egide-color-border: #2A332F;
+  --egide-color-border-strong: #3A453F;
+
+  /* ── Color: text ──────────────────────────────────────── */
+  --egide-color-text-primary: #E8EAE6;
+  --egide-color-text-secondary: #95A19C;
+  --egide-color-text-muted: #5C6863;
+  --egide-color-text-inverse: #0B0E0D;
+
+  /* ── Color: accent (UNIQUE) ───────────────────────────── */
+  --egide-color-accent: #5FA889;
+  --egide-color-accent-hover: #6FB89A;
+  --egide-color-accent-muted: #2C4F40;
+
+  /* ── Color: semantic ──────────────────────────────────── */
+  --egide-color-success: #5FA889;
+  --egide-color-success-bg: #1A3329;
+  --egide-color-warning: #D4A65A;
+  --egide-color-warning-bg: #3D3220;
+  --egide-color-danger: #B85450;
+  --egide-color-danger-bg: #3A1F1E;
+  --egide-color-info: #6B8FAB;
+  --egide-color-info-bg: #1F2A33;
+
+  /* ── Color: framework anchors (cf. AnchorChip) ────────── */
+  --egide-color-fw-iso27001: #4A7C59;
+  --egide-color-fw-iso9001: #6B8E7F;
+  --egide-color-fw-nis2: #2D5F8B;
+  --egide-color-fw-dora: #8B5A8B;
+  --egide-color-fw-cis: #8B6F2D;
+  --egide-color-fw-hds: #6B5A8B;
+
+  /* ── Typography ───────────────────────────────────────── */
+  --egide-font-ui: "Inter Tight", system-ui, -apple-system, sans-serif;
+  --egide-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Monaco, monospace;
+  --egide-font-display: "Iosevka Etoile", "Inter Tight", sans-serif;
+
+  /* Type scale */
+  --egide-text-xs: 0.75rem;     /* 12px */
+  --egide-text-sm: 0.8125rem;   /* 13px */
+  --egide-text-base: 0.875rem;  /* 14px — UI default */
+  --egide-text-md: 1rem;        /* 16px */
+  --egide-text-lg: 1.125rem;    /* 18px */
+  --egide-text-xl: 1.375rem;    /* 22px */
+  --egide-text-2xl: 1.75rem;    /* 28px */
+  --egide-text-3xl: 2.25rem;    /* 36px */
+  --egide-text-display: 3rem;   /* 48px — landing hero only */
+
+  /* Line height */
+  --egide-leading-tight: 1.2;
+  --egide-leading-normal: 1.5;
+  --egide-leading-relaxed: 1.625;
+
+  /* Letter spacing */
+  --egide-tracking-tight: -0.01em;
+  --egide-tracking-normal: 0;
+  --egide-tracking-wide: 0.04em;
+
+  /* Font weight */
+  --egide-weight-regular: 400;
+  --egide-weight-medium: 500;
+  --egide-weight-semibold: 600;
+
+  /* ── Geometry ─────────────────────────────────────────── */
+  --egide-radius: 6px;
+  --egide-radius-sm: 4px;
+  --egide-radius-lg: 8px;       /* maximum, use sparingly */
+
+  /* Spacing scale */
+  --egide-space-1: 4px;
+  --egide-space-2: 8px;
+  --egide-space-3: 12px;
+  --egide-space-4: 16px;
+  --egide-space-6: 24px;
+  --egide-space-8: 32px;
+  --egide-space-12: 48px;
+  --egide-space-16: 64px;
+
+  /* Density */
+  --egide-row-height: 32px;
+  --egide-row-height-compact: 28px;
+  --egide-row-height-comfortable: 36px;
+
+  /* Borders */
+  --egide-border-width: 1px;
+
+  /* Layout */
+  --egide-content-width: 1100px;
+  --egide-content-width-wide: 1280px;
+  --egide-content-width-app: 1400px;
+  --egide-sidebar-width: 200px;
+  --egide-sidebar-width-collapsed: 56px;
+  --egide-topbar-height: 48px;
+
+  /* ── Motion ───────────────────────────────────────────── */
+  --egide-duration-fast: 100ms;
+  --egide-duration: 150ms;
+  --egide-duration-slow: 200ms;
+  --egide-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Z-index scale ────────────────────────────────────── */
+  --egide-z-base: 0;
+  --egide-z-dropdown: 100;
+  --egide-z-sticky: 200;
+  --egide-z-overlay: 300;
+  --egide-z-modal: 400;
+  --egide-z-toast: 500;
+  --egide-z-tooltip: 600;
+
+  /* ── Shadow — DEPRECATED. Use border or bg shift only. ── */
+  /* No box-shadow tokens. Refer to ADR 017 anti-patterns.   */
+}
+
+/* Light mode (post-M5) — override surfaces and text. Accent stays. */
+:root.light {
+  --egide-color-bg: #FAFAF8;
+  --egide-color-surface: #FFFFFF;
+  --egide-color-surface-raised: #FFFFFF;
+  --egide-color-border: #E1E5E2;
+  --egide-color-border-strong: #C8CFC9;
+
+  --egide-color-text-primary: #1A1F1C;
+  --egide-color-text-secondary: #5C6863;
+  --egide-color-text-muted: #95A19C;
+  --egide-color-text-inverse: #FAFAF8;
+
+  --egide-color-accent-muted: #D4E8DD;
+  --egide-color-success-bg: #E5F0EA;
+  --egide-color-warning-bg: #F5EBD5;
+  --egide-color-danger-bg: #F5E0DF;
+  --egide-color-info-bg: #E0E8EE;
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --egide-duration-fast: 0ms;
+    --egide-duration: 0ms;
+    --egide-duration-slow: 0ms;
+  }
+}
