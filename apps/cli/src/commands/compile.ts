@@ -103,6 +103,69 @@ compileCommand
     }
   });
 
+// ── compile ansible ───────────────────────────────────────────────────────────
+
+compileCommand
+  .command("ansible")
+  .description("compile an Intent to an Ansible playbook + Molecule scenario")
+  .requiredOption("--intent <id>", "intent ID (use `egide compile list` to browse)")
+  .option("--output <dir>", "write playbook + molecule/ files to this directory", "")
+  .option("--json", "output raw JSON artifact + extra_files map", false)
+  .action(async (opts: { intent: string; output: string; json: boolean }) => {
+    process.stdout.write(
+      `${kleur.dim("→")} Compiling intent ${kleur.bold(opts.intent)} to Ansible…\n`,
+    );
+
+    type Artifact = {
+      intent_id: string;
+      target: string;
+      content: string;
+      content_hash: string;
+    };
+    type Response = { artifact: Artifact; extra_files: Record<string, string> };
+
+    try {
+      const resp = await callCompiler<Response>("/v1/compile", {
+        intent: { id: opts.intent },
+        target: "ansible",
+      });
+
+      if (opts.json) {
+        process.stdout.write(`${JSON.stringify(resp, null, 2)}\n`);
+        return;
+      }
+
+      if (!opts.output) {
+        // Print playbook to stdout when no output dir is set.
+        process.stdout.write(`${resp.artifact.content}\n`);
+        return;
+      }
+
+      mkdirSync(opts.output, { recursive: true });
+      const playbookPath = join(opts.output, "playbook.yml");
+      writeFileSync(playbookPath, resp.artifact.content, "utf8");
+      process.stdout.write(
+        `${kleur.green("✓")} Written ${kleur.bold(playbookPath)}\n`,
+      );
+
+      for (const [relPath, content] of Object.entries(resp.extra_files ?? {})) {
+        const target = join(opts.output, relPath);
+        mkdirSync(join(target, ".."), { recursive: true });
+        writeFileSync(target, content, "utf8");
+        process.stdout.write(`${kleur.green("✓")} Written ${kleur.bold(target)}\n`);
+      }
+      process.stdout.write(
+        `${kleur.dim("  ")}hash: ${resp.artifact.content_hash}\n`,
+      );
+      process.stdout.write(
+        `${kleur.dim("→")} Run tests with: ${kleur.bold(`cd ${opts.output} && molecule test`)}\n`,
+      );
+    } catch (err) {
+      process.stderr.write(`${kleur.red("✗")} ${(err as Error).message}\n`);
+      process.exit(1);
+    }
+  });
+
 // ── compile test ──────────────────────────────────────────────────────────────
 
 compileCommand

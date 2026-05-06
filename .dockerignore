@@ -1,0 +1,58 @@
+# Build context is the monorepo root (cf. .github/workflows/release.yml).
+# Keep this list in sync with .gitignore.
+
+# VCS / IDE
+.git
+.github
+.gitignore
+.gitattributes
+.vscode
+.idea
+.DS_Store
+
+# Editor / OS
+**/.DS_Store
+**/Thumbs.db
+
+# Node / pnpm
+node_modules
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/build
+**/*.tsbuildinfo
+**/coverage
+**/.vitest-cache
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/venv
+
+# Go
+**/vendor
+edge/agent/server
+services/*/server
+services/*/cmd/server/server
+
+# Tests / docs / artefacts not needed at runtime
+docs
+tests
+**/*.md
+!packages/ui/README.md
+.gitleaks-*.json
+.gitleaks.toml
+
+# Helm chart and deploy assets are not part of any image
+deploy
+
+# Local secrets / env
+**/.env
+**/.env.*
+!**/.env.example

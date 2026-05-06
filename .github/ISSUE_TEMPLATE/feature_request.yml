@@ -1,0 +1,68 @@
+name: Feature request
+description: Suggest an enhancement or new capability.
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Egide is opinionated — not every request fits the roadmap. We
+        prioritise features that strengthen the **strategic-to-executable
+        cascade**, the **anti-Vanta sovereignty posture**, or the
+        **MVP persona** (sysadmin / DevOps / op-RSSI). See
+        [docs/roadmap.md](../../docs/roadmap.md) and
+        [ADR 013](../../docs/adr/013-mvp-persona.md).
+
+        For new dependencies (libraries, services), an ADR amendment is
+        typically required. See [ADR 003](../../docs/adr/003-stack-decision.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem does this solve? Who is affected?
+      placeholder: "As a <persona>, I cannot <do X> because <Y>."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Sketch the feature. APIs, UI, CLI commands, schema changes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you try / consider?
+
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Target edition
+      options:
+        - Community (AGPL-3.0)
+        - Professional
+        - Enterprise
+        - "Don't know"
+    validations:
+      required: true
+
+  - type: input
+    id: roadmap
+    attributes:
+      label: Roadmap milestone (best guess)
+      placeholder: "M6 / M9 / M12 / unknown"
+
+  - type: checkboxes
+    id: alignment
+    attributes:
+      label: Alignment check
+      options:
+        - label: This feature is consistent with the MVP persona (cf. ADR 013).
+        - label: This feature respects sovereignty (no hard dependency on a US-only SaaS).
+        - label: This feature does not require an anti-tool from CLAUDE.md (LangChain, Temporal, Neo4j, Kafka, Elasticsearch, MongoDB, etc.).
+        - label: I have checked existing ADRs and roadmap.md.
+          required: true

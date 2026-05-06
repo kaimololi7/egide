@@ -16,6 +16,7 @@ import { loadEnv } from "./env.js";
 import { appRouter, createContext } from "./trpc.js";
 import { createAuth } from "./auth.js";
 import { healthRoutes } from "./contexts/health/routes.js";
+import { llmRoutes } from "./contexts/llm/routes.js";
 import { logger as makeLogger } from "./shared/logger.js";
 
 type Variables = {
@@ -72,6 +73,9 @@ app.use("*", async (c, next) => {
 
 // ── Health (always available, no auth) ─────────────────
 app.route("/health", healthRoutes());
+
+// ── /v1/llm/* — direct service-account routes (cf. ADR 004) ──
+app.route("/v1/llm", llmRoutes(env, logger));
 
 // ── Better-Auth handler at /api/auth/* ─────────────────
 // (cf. ADR 014 §A07 — authentication endpoints)

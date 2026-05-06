@@ -1,0 +1,99 @@
+# Dependabot — keep dependencies + GHA actions current.
+# Cf. ADR 016 (Secure SDLC).
+#
+# All PRs go through CI gates (semgrep + osv-scanner + trivy + license audit)
+# before merge.
+
+version: 2
+updates:
+  # ── GitHub Actions ──────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels: [deps, ci]
+    commit-message:
+      prefix: "ci"
+      include: scope
+
+  # ── npm / pnpm root + workspaces ────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels: [deps, javascript]
+    commit-message:
+      prefix: "chore"
+      include: scope
+    groups:
+      next:
+        patterns: ["next", "@next/*", "react", "react-dom"]
+      typescript:
+        patterns: ["typescript", "@types/*", "tsx", "tsup"]
+      tooling:
+        patterns: ["@biomejs/*", "turbo", "vitest"]
+    ignore:
+      # Manual upgrades — major version jumps need ADR review.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+
+  # ── Go modules (per service / app) ──────────────────────────────
+  - package-ecosystem: gomod
+    directory: /services/compiler
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+  - package-ecosystem: gomod
+    directory: /services/validator
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+  - package-ecosystem: gomod
+    directory: /services/extractor
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+  - package-ecosystem: gomod
+    directory: /services/pipeline
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+  - package-ecosystem: gomod
+    directory: /services/datalake
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+  - package-ecosystem: gomod
+    directory: /edge/agent
+    schedule: { interval: weekly, day: tuesday }
+    labels: [deps, go]
+    commit-message: { prefix: "chore", include: scope }
+
+  # ── Python (uv-managed) ─────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 5
+    labels: [deps, python]
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  # ── Docker base images ──────────────────────────────────────────
+  - package-ecosystem: docker
+    directory: /deploy/docker
+    schedule:
+      interval: weekly
+      day: thursday
+    labels: [deps, docker]
+    commit-message:
+      prefix: "chore"
+      include: scope

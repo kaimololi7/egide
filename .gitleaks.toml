@@ -1,0 +1,52 @@
+# gitleaks configuration — Egide
+#
+# Used by:
+#   - local pre-commit hook
+#   - .github/workflows/ci.yml (gitleaks step)
+#
+# The CI step runs in --no-git mode against the working tree of the PR so
+# build artefacts that are gitignored locally still get scanned. We must
+# therefore explicitly path-ignore those artefacts here, otherwise Next.js
+# preview tokens (`previewModeId`, `previewModeSigningKey`) trigger the
+# generic-api-key rule.
+#
+# Cf. ADR 016 (Secure SDLC).
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Build artefacts and well-known fixtures that are not real secrets"
+paths = [
+  # Next.js build outputs (gitignored locally, may show up in CI workspace)
+  '''(^|/)\.next/''',
+  '''(^|/)apps/web/\.next/''',
+
+  # Bun / TS dist outputs
+  '''(^|/)apps/[^/]+/dist/''',
+  '''(^|/)packages/[^/]+/dist/''',
+
+  # Turbo cache and node_modules (already gitignored)
+  '''(^|/)\.turbo/''',
+  '''(^|/)node_modules/''',
+
+  # Go build outputs
+  '''(^|/)edge/agent/server$''',
+
+  # Test fixtures and lock files
+  '''(^|/)tests/eval/fixtures/''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)go\.sum$''',
+  '''(^|/)uv\.lock$''',
+
+  # gitleaks scan reports
+  '''(^|/)\.gitleaks-(report|fs)\.json$''',
+]
+
+# Fingerprint allowlist for known false-positive matches we have triaged.
+# Add a fingerprint here only after manual review.
+stopwords = [
+  "previewModeId",
+  "previewModeSigningKey",
+  "previewModeEncryptionKey",
+]

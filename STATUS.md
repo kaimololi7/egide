@@ -1,11 +1,16 @@
 # Egide — Current status
 
-**Phase**: M4-M5 — Compiler + CLI + Web viewer + Eval extension
-**Date**: 2026-05-15
+**Phase**: M5 closing → M6 ramp-up (Batch U — service-account auth, SSE NATS,
+OSCAL SSP export, real LLM drafting via `/v1/llm/complete`)
+**Date**: 2026-05-06
 
 ## What is in this repo right now
 
-- Documentation only. **No application code yet.**
+- Working multi-language application (TS + Go + Python) totalling ~16 kLOC
+  of source (excluding tests). All sprints M0–M5 livrés ; M5–6 follow-ups
+  (RLS, Helm, providers, Better-Auth, NatsClient, agents/common tests,
+  landing UX) livrés ; **Batch U** (service-account auth + SSE NATS +
+  OSCAL + LLM drafting) livré le 2026-05-06.
 - Monorepo structure scaffolded: `apps/`, `services/`, `agents/`, `edge/`,
   `packages/`, `ontologies/`, `deploy/`, `docs/`.
 - Root manifests: `package.json` (pnpm workspace), `pnpm-workspace.yaml`,
@@ -212,6 +217,68 @@ Beyond the original ADR set, the following have been gravé:
 - ~~DB lookup réel dans `apps/api/src/middleware/tenant.ts`~~ ✅ (Drizzle `db.query.users.findFirst`)
 - Drizzle Better-Auth adapter (au lieu du Pool brut) — optionnel
 - Ingress + TLS template + NetworkPolicy templates ✅
+
+### Sprint Batch U (2026-05-06) — service-account auth + SSE NATS + OSCAL + real LLM drafting
+
+- ✅ **Service-account auth** (`apps/api/src/middleware/tenant.ts` +
+  `trpc.ts`) :
+  - `EGIDE_SERVICE_TOKENS` JSON env (label, sha256 tokenHash, scopes,
+    allowedTenants) ; tokens never stored in DB.
+  - `Authorization: Bearer` + `X-Egide-Tenant-Id` header pattern,
+    timing-safe hash compare, fail-closed on parse error.
+  - `serviceProcedure(scope)` wrapper for tRPC + `authenticateServiceAccount()`
+    helper for direct Hono routes.
+  - `EGIDE_SYSTEM_USER_ID` (default `0…beef`) used as `created_by` when
+    a service account writes (FK preserved). Seeded by
+    `deploy/scripts/seed-system-user.sql`.
+  - `pyramid.persist` now `serviceProcedure("pyramid:persist")`.
+
+- ✅ **Web SSE → NATS `egide.v1.pyramid.progress`**
+  (`apps/web/src/app/api/pyramid-progress/[id]/route.ts` +
+  `apps/web/src/lib/nats.ts`) :
+  - Singleton NATS connection (Node runtime, edge-incompatible by design).
+  - Ephemeral JetStream consumer on the EVENTS stream, deliver-all replay,
+    auto-cleanup after 60s of inactivity.
+  - Frame filter by `pyramid_id` ; terminates on `DONE`/`FAILED` ;
+    heartbeat 15s ; overall timeout 5min ; abort cleanup.
+  - Synthetic-phase fallback when NATS is unreachable (dev mode).
+
+- ✅ **OSCAL SSP serializer** (`packages/oscal/`) :
+  - Pure-function `serializePyramidToSSP()` producing valid OSCAL 1.1.2
+    `system-security-plan` shape (deterministic UUIDs, framework → profile
+    href mapping, components/by-policy + implemented-requirements/by-anchor).
+  - 3 Vitest cases passing.
+  - `audit.exportOSCAL` no longer a stub: returns `{ ssp, meta }` and writes
+    `audit_logs` entry. Tenant-scoped lookup ; FK-safe.
+
+- ✅ **`POST /v1/llm/complete`** (`apps/api/src/contexts/llm/routes.ts`) :
+  - Direct Hono route (not tRPC) for service-account workers.
+  - Scope `llm:complete` enforced ; provider selection env-driven
+    (Ollama / Anthropic / Mistral) ; 503 in `template_only`.
+  - Per-call audit row in `llm_calls` (success + failure paths).
+  - Returns `{content, tool_uses, usage, cache_hit, est_cost_micro_usd,
+    latency_ms, finish_reason, provider, model}`.
+
+- ✅ **Real LLM drafting** in `agents/orchestrator/.../worker.py` :
+  - `_phase_drafting` calls `/v1/llm/complete` per anchor cluster when
+    `EGIDE_LLM_ENABLED=1` + `EGIDE_ORCHESTRATOR_TOKEN` set.
+  - JSON-only contract from the model ; cited anchors re-attached
+    machine-side (Q01 hallucination guard preserved).
+  - Per-cluster fallback to deterministic template on HTTP / parse error.
+
+- ✅ **Worker auth wired** : orchestrator now sends `Authorization: Bearer`
+  + `X-Egide-Tenant-Id` on `/trpc/v1.pyramid.persist` so the API can
+  authenticate it as a service account.
+
+### Verified
+
+- `pnpm --filter @egide/api typecheck` ✅
+- `pnpm --filter @egide/web typecheck` ✅
+- `pnpm --filter @egide/oscal typecheck` + `vitest` ✅ (3/3)
+- `pnpm --filter @egide/llm-router typecheck` ✅
+- `uv run pytest tests/eval/runners/test_j1_state_machine.py` ✅ (10/10)
+- `uv run mypy agents/orchestrator/src` ✅ on new code (1 pre-existing
+  unused `# type: ignore` warning at line 68, unrelated)
 
 ### Sprint M5-M6 follow-ups (2026-05-15)
 

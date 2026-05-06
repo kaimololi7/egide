@@ -31,6 +31,18 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be ≥32 chars"),
   BETTER_AUTH_URL: z.string().url(),
 
+  // Service-account tokens for machine-to-machine calls.
+  // JSON array: [{label, tokenHash, scopes, allowedTenants}]
+  // tokenHash = sha256(token) hex.
+  EGIDE_SERVICE_TOKENS: z.string().optional(),
+
+  // System user UUID used as `created_by` when a service account writes.
+  // Seeded by deploy/scripts/seed-system-user.sql.
+  EGIDE_SYSTEM_USER_ID: z
+    .string()
+    .uuid()
+    .default("00000000-0000-0000-0000-00000000beef"),
+
   // Server
   PORT: z.coerce.number().int().positive().default(3001),
   HOST: z.string().default("127.0.0.1"),

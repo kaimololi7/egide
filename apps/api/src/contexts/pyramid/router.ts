@@ -11,7 +11,7 @@ import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { protectedProcedure, router } from "../../trpc.js";
+import { protectedProcedure, router, serviceProcedure } from "../../trpc.js";
 
 // ── Shared output schemas ─────────────────────────────────────────────────────
 
@@ -113,8 +113,12 @@ export const pyramidRouter = router({
    *
    * Idempotency: if a version with the same contentHash already exists,
    * returns it (no duplicate insert).
+   *
+   * Auth: requires a service-account bearer token with scope
+   * "pyramid:persist" + X-Egide-Tenant-Id header (cf. middleware/tenant.ts).
+   * The orchestrator calls this with EGIDE_ORCHESTRATOR_TOKEN.
    */
-  persist: protectedProcedure
+  persist: serviceProcedure("pyramid:persist")
     .input(
       z.object({
         pyramidId: z.string().uuid(),
@@ -197,6 +201,12 @@ export const pyramidRouter = router({
         .where(eq(schema.pyramidVersions.pyramidId, input.pyramidId));
       const nextVersion = `v${existingVersions.length + 1}`;
 
+      // For service-account writes, use the system user UUID so the
+      // FK to users(id) holds. Real user sessions use their own UUID.
+      const actorId = ctx.session.service
+        ? ctx.env.EGIDE_SYSTEM_USER_ID
+        : ctx.session.userId;
+
       const [version] = await db
         .insert(schema.pyramidVersions)
         .values({
@@ -204,7 +214,7 @@ export const pyramidRouter = router({
           version: nextVersion,
           graphSnapshot: input.graphSnapshot,
           contentHash,
-          createdBy: ctx.session.userId,
+          createdBy: actorId,
         })
         .returning();
 
@@ -220,12 +230,13 @@ export const pyramidRouter = router({
       await db.insert(schema.auditLogs).values({
         tenantId: ctx.tenantId,
         pyramidId: input.pyramidId,
-        actorId: ctx.session.userId,
+        actorId,
         action: "pyramid.persist",
         payload: {
           versionId: version?.id,
           contentHash,
           version: nextVersion,
+          actorLabel: ctx.session.service ? ctx.session.userId : undefined,
         },
       });
 

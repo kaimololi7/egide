@@ -1,0 +1,194 @@
+# Framework coverage fixtures — NIS2, CIS Controls v8.1, DORA.
+#
+# These fixtures validate that the agents/compliance super-agent + the
+# normative RAG correctly resolve anchors against the three frameworks
+# beyond the bootstrap ISO 27001 set.
+#
+# Acceptance: ≥ 80% of fixtures must produce at least one valid anchor
+# from the target framework, with the hallucination guard passing.
+#
+# Cf. roadmap.md M6 deliverables (4 frameworks production-ready).
+#
+# Format:
+#   id:                unique fixture ID
+#   framework:         nis2 | cis | dora
+#   text:              the source paragraph fed to classify_chunk
+#   expect_anchor_in:  list of acceptable anchor strings (any match counts)
+#   expect_kind:       directive | policy | procedure | process | kpi
+
+fixtures:
+
+  # ── NIS2 (Directive 2022/2555) ─────────────────────────────────────────────
+
+  - id: nis2-001
+    framework: nis2
+    text: |
+      Toute entité essentielle doit notifier les incidents de sécurité
+      significatifs au CSIRT national dans un délai de 24 heures pour
+      l'alerte préliminaire et 72 heures pour la notification complète.
+    expect_anchor_in:
+      - "nis2:Art.23.4"
+      - "nis2:Art.23"
+    expect_kind: procedure
+    hint: "Article 23 — incident notification timelines"
+
+  - id: nis2-002
+    framework: nis2
+    text: |
+      L'organe de direction doit approuver les mesures de gestion des
+      risques en matière de cybersécurité et superviser leur mise en œuvre.
+    expect_anchor_in:
+      - "nis2:Art.20"
+      - "nis2:Art.20.1"
+    expect_kind: directive
+    hint: "Article 20 — governance bodies' accountability"
+
+  - id: nis2-003
+    framework: nis2
+    text: |
+      Les politiques de chiffrement et l'utilisation de la cryptographie
+      font partie des mesures de gestion des risques exigées.
+    expect_anchor_in:
+      - "nis2:Art.21.2.h"
+      - "nis2:Art.21"
+    expect_kind: policy
+    hint: "Article 21.2.h — cryptography and encryption policies"
+
+  - id: nis2-004
+    framework: nis2
+    text: |
+      Le taux de couverture de l'authentification multifacteur sur les
+      comptes à privilèges est mesuré chaque mois et doit atteindre 100%.
+    expect_anchor_in:
+      - "nis2:Art.21.2.j"
+      - "nis2:Art.21"
+    expect_kind: kpi
+    hint: "Article 21.2.j — MFA / continuous authentication"
+
+  - id: nis2-005
+    framework: nis2
+    text: |
+      La sécurité de la chaîne d'approvisionnement, y compris les
+      relations contractuelles avec les fournisseurs directs, est évaluée
+      annuellement.
+    expect_anchor_in:
+      - "nis2:Art.21.2.d"
+      - "nis2:Art.21"
+    expect_kind: procedure
+    hint: "Article 21.2.d — supply-chain security"
+
+  # ── CIS Controls v8.1 ──────────────────────────────────────────────────────
+
+  - id: cis-001
+    framework: cis
+    text: |
+      Maintain an actively-managed inventory of all enterprise assets,
+      including end-user devices, network devices, IoT, and servers.
+    expect_anchor_in:
+      - "cis-v8.1:1.1"
+      - "cis-v8.1:1"
+    expect_kind: procedure
+    hint: "Control 1.1 — Establish and Maintain Detailed Enterprise Asset Inventory"
+
+  - id: cis-002
+    framework: cis
+    text: |
+      Use only currently-supported software ; remove unsupported software
+      within 90 days of end-of-life notification.
+    expect_anchor_in:
+      - "cis-v8.1:2.2"
+      - "cis-v8.1:2"
+    expect_kind: policy
+    hint: "Control 2.2 — Ensure Authorized Software is Currently Supported"
+
+  - id: cis-003
+    framework: cis
+    text: |
+      Centralize account management through a directory or identity service
+      and review privileged access quarterly.
+    expect_anchor_in:
+      - "cis-v8.1:5.6"
+      - "cis-v8.1:5"
+    expect_kind: procedure
+    hint: "Control 5.6 — Centralize Account Management"
+
+  - id: cis-004
+    framework: cis
+    text: |
+      Establish and maintain a vulnerability management process with
+      monthly authenticated scans of all enterprise assets.
+    expect_anchor_in:
+      - "cis-v8.1:7.1"
+      - "cis-v8.1:7"
+    expect_kind: procedure
+    hint: "Control 7.1 — Establish and Maintain a Vulnerability Management Process"
+
+  - id: cis-005
+    framework: cis
+    text: |
+      Perform automated backups of all in-scope enterprise assets and test
+      restoration at least quarterly.
+    expect_anchor_in:
+      - "cis-v8.1:11.2"
+      - "cis-v8.1:11"
+    expect_kind: procedure
+    hint: "Control 11.2 — Perform Automated Backups"
+
+  # ── DORA (Regulation EU 2022/2554) ─────────────────────────────────────────
+
+  - id: dora-001
+    framework: dora
+    text: |
+      L'organe de direction de l'entité financière définit, approuve,
+      supervise et est responsable de la mise en œuvre du cadre de
+      gestion des risques liés aux TIC.
+    expect_anchor_in:
+      - "dora:Art.5"
+      - "dora:Art.5.1"
+    expect_kind: directive
+    hint: "Article 5 — ICT risk-management governance and organisation"
+
+  - id: dora-002
+    framework: dora
+    text: |
+      Les entités financières mettent en place une politique de continuité
+      d'activité TIC et un plan de réponse et de rétablissement testés
+      annuellement.
+    expect_anchor_in:
+      - "dora:Art.11"
+      - "dora:Art.11.6"
+    expect_kind: policy
+    hint: "Article 11 — ICT business continuity policy and plans"
+
+  - id: dora-003
+    framework: dora
+    text: |
+      Les incidents majeurs liés aux TIC sont notifiés à l'autorité
+      compétente selon les modèles et délais fixés par les RTS.
+    expect_anchor_in:
+      - "dora:Art.19"
+      - "dora:Art.19.1"
+    expect_kind: procedure
+    hint: "Article 19 — Reporting of major ICT-related incidents"
+
+  - id: dora-004
+    framework: dora
+    text: |
+      Un programme de tests de résilience opérationnelle numérique est
+      établi, incluant des TLPT triennaux pour les entités significatives.
+    expect_anchor_in:
+      - "dora:Art.24"
+      - "dora:Art.26"
+    expect_kind: procedure
+    hint: "Articles 24/26 — Digital operational resilience testing / TLPT"
+
+  - id: dora-005
+    framework: dora
+    text: |
+      Les contrats avec les prestataires tiers de services TIC critiques
+      contiennent des clauses minimales définies par la réglementation.
+    expect_anchor_in:
+      - "dora:Art.30"
+      - "dora:Art.30.2"
+    expect_kind: policy
+    hint: "Article 30 — Key contractual provisions for ICT third-party arrangements"

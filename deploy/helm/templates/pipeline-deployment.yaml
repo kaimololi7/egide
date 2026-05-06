@@ -1,0 +1,3 @@
+{{- if .Values.pipeline.enabled -}}
+{{- include "egide.componentDeployment" (dict "name" "pipeline" "values" .Values.pipeline "root" .) }}
+{{- end }}

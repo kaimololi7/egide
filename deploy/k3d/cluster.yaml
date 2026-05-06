@@ -1,0 +1,52 @@
+# k3d sandbox cluster for the Egide M5 exit demo.
+#
+# Usage:
+#   k3d cluster create --config deploy/k3d/cluster.yaml
+#   kubectl config use-context k3d-egide-demo
+#
+# The cluster mounts the validating webhook (Kyverno or OPA Gatekeeper)
+# that consumes the Rego bundle compiled by the M5 e2e script:
+# `scripts/e2e-demo.sh`.
+#
+# Bundled images (pre-loaded to avoid air-gapped surprises during demo):
+#   - rancher/k3s:v1.30.4-k3s1
+#   - openpolicyagent/opa:0.69.0-rootless
+#
+# Cf. ADR 005 + roadmap.md M5 exit criteria.
+
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: egide-demo
+
+servers: 1
+agents: 1
+
+image: rancher/k3s:v1.30.4-k3s1
+
+ports:
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+
+options:
+  k3d:
+    wait: true
+    timeout: 120s
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+
+registries:
+  create:
+    name: egide-registry
+    host: "0.0.0.0"
+    hostPort: "5050"
