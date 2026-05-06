@@ -15,10 +15,12 @@
 import {
   bigint,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
   pgTable,
+  real,
   text,
   timestamp,
   uniqueIndex,
@@ -404,3 +406,91 @@ export const kpiActuals = pgTable("kpi_actuals", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// Normative RAG index — ontology chunks with pgvector embeddings (ADR 007)
+// Each cluster YAML (agents/ontologies/clusters/*.yaml) is chunked here.
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * pgvector column type. Drizzle does not ship a built-in pgvector type yet;
+ * we use customType to emit the correct DDL (`vector(1536)`).
+ */
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector(1536)";
+  },
+  toDriver(value: number[]) {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value: string) {
+    return value
+      .slice(1, -1)
+      .split(",")
+      .map(Number);
+  },
+});
+
+export const ontologyChunks = pgTable(
+  "ontology_chunks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    /** Source cluster identifier, e.g. "incident-management". */
+    cluster: text("cluster").notNull(),
+    /** Framework and clause, e.g. "ISO27001:2022 A.16.1.1". */
+    framework: text("framework").notNull(),
+    clause: text("clause").notNull(),
+    title: text("title").notNull(),
+    /** Full text of the normative chunk (used for display and RAG retrieval). */
+    text: text("text").notNull(),
+    /** pgvector embedding (text-embedding-3-small, 1536 dims). Nullable until embedded. */
+    embedding: vector("embedding"),
+    /** Similarity score from the last search (populated at query time, not stored). */
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    clusterIdx: index("ontology_chunks_cluster_idx").on(t.cluster),
+    frameworkClauseIdx: index("ontology_chunks_framework_clause_idx").on(t.framework, t.clause),
+  }),
+);
+
+// ──────────────────────────────────────────────────────────────────────────
+// Approval requests — governance sign-off workflow (ADR 010)
+// ──────────────────────────────────────────────────────────────────────────
+
+export const approvalRequests = pgTable(
+  "approval_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    /** The entity requiring approval: pyramid_version, directive, compiled_artifact, etc. */
+    entityType: text("entity_type", {
+      enum: ["pyramid_version", "directive", "compiled_artifact", "mutation"],
+    }).notNull(),
+    entityId: uuid("entity_id").notNull(),
+    requestedBy: uuid("requested_by")
+      .notNull()
+      .references(() => users.id),
+    /** Required approver role. */
+    approverRole: text("approver_role", {
+      enum: ["admin", "process_owner", "auditor"],
+    }).notNull(),
+    approvedBy: uuid("approved_by").references(() => users.id),
+    status: text("status", {
+      enum: ["pending", "approved", "rejected", "cancelled"],
+    })
+      .notNull()
+      .default("pending"),
+    comment: text("comment"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    entityIdx: index("approval_requests_entity_idx").on(t.entityType, t.entityId),
+    tenantStatusIdx: index("approval_requests_tenant_status_idx").on(t.tenantId, t.status),
+  }),
+);
