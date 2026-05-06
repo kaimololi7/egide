@@ -1,0 +1,445 @@
+# Classification fixtures — 20 text snippets with expected pyramid layer
+#
+# Format (YAML list):
+#   id:             unique fixture ID
+#   text:           the excerpt to classify
+#   expected_layer: directive | policy | procedure | process | kpi
+#   hint:           optional hint about why this is the expected layer
+#   framework_hint: optional expected framework (for partial scoring)
+
+fixtures:
+
+  # ── DIRECTIVE (5) ────────────────────────────────────────────────────────
+
+  - id: clf-001
+    text: >
+      The Board of Directors of Acme SA commits to achieving and maintaining
+      ISO 27001:2022 certification for all information assets. The organisation
+      will allocate sufficient resources and leadership attention to information
+      security as a strategic priority.
+    expected_layer: directive
+    hint: "Board-level strategic commitment — classic directive language"
+
+  - id: clf-002
+    text: >
+      La direction générale s'engage à respecter les obligations NIS2 dans
+      leur intégralité et mandate le RSSI pour piloter le programme de mise
+      en conformité avec un budget dédié approuvé en COMEX.
+    expected_layer: directive
+    hint: "DG mandate + COMEX budget = directive"
+
+  - id: clf-003
+    text: >
+      Information security is a core organisational value. Senior leadership
+      will visibly champion security initiatives and ensure accountability
+      at all management levels. Compliance with applicable laws and regulations
+      is non-negotiable.
+    expected_layer: directive
+    xfail_heuristic: true
+    hint: "Mission-statement language, no specific rules — directive"
+
+  - id: clf-004
+    text: >
+      Notre organisation considère la continuité d'activité comme un impératif
+      stratégique. La direction s'engage à définir des objectifs de reprise
+      (RTO/RPO) alignés avec les besoins métiers et à les réviser annuellement.
+    expected_layer: directive
+    xfail_heuristic: true
+    hint: "Strategic commitment, no operational how-to — directive"
+
+  - id: clf-005
+    text: >
+      The CISO is accountable to the CEO for the design, implementation, and
+      continuous improvement of the Information Security Management System,
+      with authority to mandate controls across all business units.
+    expected_layer: directive
+    hint: "Accountability + authority at executive level — directive"
+
+  # ── POLICY (5) ───────────────────────────────────────────────────────────
+
+  - id: clf-006
+    text: >
+      All endpoint devices MUST have approved anti-malware software installed
+      and running with real-time protection enabled. Exceptions require written
+      approval from the CISO and MUST be reviewed quarterly.
+    expected_layer: policy
+    hint: "MUST obligation + exception process = policy"
+
+  - id: clf-007
+    text: >
+      Les accès aux systèmes d'information DOIVENT être accordés selon le
+      principe du moindre privilège. Tout accès privilégié DOIT être justifié,
+      approuvé par le responsable hiérarchique et audité mensuellement.
+    expected_layer: policy
+    hint: "DOIT + least-privilege + audit obligation = policy"
+
+  - id: clf-008
+    text: >
+      Data classified as CONFIDENTIAL or RESTRICTED MUST be encrypted at
+      rest using AES-256 or equivalent. Unencrypted storage of such data is
+      prohibited without documented CISO exception.
+    expected_layer: policy
+    hint: "MUST + PROHIBITED = policy"
+
+  - id: clf-009
+    text: >
+      Vulnerability scanning MUST be performed on all production systems at
+      least monthly. Critical vulnerabilities (CVSS ≥ 9.0) MUST be remediated
+      within 5 business days of discovery.
+    expected_layer: policy
+    hint: "Mandatory frequency + remediation SLA = policy"
+
+  - id: clf-010
+    text: >
+      Les incidents de sécurité DOIVENT être notifiés à l'ANSSI dans un délai
+      maximal de 24 heures après détection pour les incidents majeurs au sens
+      NIS2. Une notification détaillée DOIT suivre dans les 72 heures.
+    expected_layer: policy
+    hint: "Mandatory notification timeline from NIS2 Art.23 = policy"
+
+  # ── PROCEDURE (4) ────────────────────────────────────────────────────────
+
+  - id: clf-011
+    text: >
+      Step 1: The operator opens a ticket in the ITSM system with severity,
+      affected system, and first symptoms. Step 2: The on-call engineer acknowledges
+      within 15 minutes. Step 3: The incident is triaged and escalated if P1.
+      Step 4: Resolution steps are documented in real time.
+    expected_layer: procedure
+    hint: "Numbered steps with actors and SLAs = procedure"
+
+  - id: clf-012
+    text: >
+      Pour activer le plan de continuité (PCA) : 1) Le responsable PCA déclare
+      l'activation en COMEX. 2) Les équipes IT basculent sur le site de repli
+      dans les 2 heures. 3) Les utilisateurs sont notifiés par SMS + email.
+      4) Le retour en production est validé par le RSSI avant déclaration de fin.
+    expected_layer: procedure
+    xfail_heuristic: true
+    hint: "Step-by-step with SLAs and actors = procedure"
+
+  - id: clf-013
+    text: >
+      To process an access request: the employee submits the form in the IAM
+      portal. The line manager reviews and approves within 2 business days.
+      IT provisions the account with minimum required permissions. The employee
+      is notified and must acknowledge the acceptable use policy before first login.
+    expected_layer: procedure
+    hint: "Sequential steps, approval flow, SLA = procedure"
+
+  - id: clf-014
+    text: >
+      Procédure de sauvegarde quotidienne : lancement automatique à 02h00 UTC,
+      vérification du hash SHA-256 de chaque archive, copie hors-site sur stockage
+      chiffré S3. En cas d'échec, alerte PagerDuty dans les 5 minutes.
+    expected_layer: procedure
+    xfail_heuristic: true
+    hint: "Automated steps with technical actions = procedure"
+
+  # ── PROCESS (3) ──────────────────────────────────────────────────────────
+
+  - id: clf-015
+    text: >
+      The change management process begins when a Request for Change (RFC) is
+      submitted. The CAB reviews RFCs weekly. Approved changes are scheduled,
+      implemented, and closed. Emergency changes bypass the CAB but require
+      post-implementation review within 48 hours.
+    expected_layer: process
+    xfail_heuristic: true
+    hint: "Swimlane-style workflow with decision points = process"
+
+  - id: clf-016
+    text: >
+      Le processus de revue des accès suit un cycle trimestriel : les responsables
+      métier reçoivent la liste des habilitations de leur périmètre, valident ou
+      révoquent chaque droit, et transmettent la décision à l'équipe IAM pour
+      exécution. Un rapport de synthèse est produit pour la revue de direction.
+    expected_layer: process
+    xfail_heuristic: true
+    hint: "Cyclical workflow with stakeholders and output = process"
+
+  - id: clf-017
+    text: >
+      Risk management is an ongoing process integrated into project delivery.
+      Projects assess risks at inception, during sprints, and at closure.
+      The risk register is reviewed monthly by the Risk Committee. Residual
+      risks above appetite trigger escalation to the CISO.
+    expected_layer: process
+    hint: "Ongoing workflow with multiple checkpoints = process"
+
+  # ── KPI (3) ──────────────────────────────────────────────────────────────
+
+  - id: clf-018
+    text: >
+      Metric: Mean Time to Detect (MTTD) — Target: ≤ 4 hours for P1 incidents.
+      Measurement: average time from first log evidence to SOC alert.
+      Source: SIEM. Review cadence: monthly dashboard + quarterly trend.
+    expected_layer: kpi
+    hint: "Named metric + target + measurement method = KPI"
+
+  - id: clf-019
+    text: >
+      Taux de couverture des sauvegardes testées : objectif ≥ 95 % des systèmes
+      critiques avec test de restauration réussi sur les 90 derniers jours.
+      SLA : résultat communiqué en revue de direction trimestrielle.
+    expected_layer: kpi
+    hint: "Coverage percentage + target + review cadence = KPI"
+
+  - id: clf-020
+    text: >
+      SLO: 99.5% of critical vulnerabilities (CVSS ≥ 9.0) remediated within
+      5 business days of discovery. Measured monthly. Below-target months
+      trigger a root-cause analysis reported to the CISO within 10 days.
+    expected_layer: kpi
+    hint: "SLO with percentage target + RCA trigger = KPI"
+
+  # ── DIRECTIVE (5 additional — clf-021..025) ───────────────────────────────
+
+  - id: clf-021
+    text: >
+      The Chief Executive Officer declares that data privacy is a fundamental
+      right for our customers. This organisation commits to full GDPR compliance
+      as a non-negotiable operating standard approved by the Supervisory Board.
+    expected_layer: directive
+    hint: "CEO-level declaration + board approval = directive"
+
+  - id: clf-022
+    text: >
+      Le Conseil d'Administration mandate le Directeur Général à définir et
+      maintenir un cadre de sécurité des systèmes d'information conforme
+      aux exigences NIS2. Toute dérogation nécessite une validation du COMEX.
+    expected_layer: directive
+    hint: "Board mandate + COMEX override = directive"
+
+  - id: clf-023
+    text: >
+      Our organisation adopts a zero-trust security architecture as a strategic
+      direction approved by executive leadership. Network perimeter is no longer
+      a trusted boundary. Identity is the new perimeter.
+    expected_layer: directive
+    hint: "Strategic architecture direction approved by leadership = directive"
+
+  - id: clf-024
+    text: >
+      Management Statement on Business Continuity: The organisation will
+      maintain a certified ISO 22301 Business Continuity Management System.
+      The CEO and COO are jointly accountable for continuity posture.
+    expected_layer: directive
+    hint: "Management statement with named executive accountability = directive"
+
+  - id: clf-025
+    text: >
+      The Board commits to annual EBIOS RM risk assessments for all critical
+      information systems. Budget allocation for risk treatment is mandatory
+      and requires COMEX sign-off each fiscal year.
+    expected_layer: directive
+    hint: "Board commitment + annual cycle + budget mandate = directive"
+
+  # ── POLICY (5 additional — clf-026..030) ──────────────────────────────────
+
+  - id: clf-026
+    text: >
+      All external-facing APIs must implement OAuth 2.0 with short-lived
+      access tokens (max 15 minutes). Refresh tokens must be stored encrypted
+      and rotated on every use. API keys are prohibited for production services.
+    expected_layer: policy
+    hint: "Must + technical rule + prohibition = policy"
+
+  - id: clf-027
+    text: >
+      La politique de gestion des correctifs exige que toute vulnérabilité
+      critique (CVSS ≥ 9.0) soit corrigée dans un délai de 72 heures après
+      publication du bulletin de sécurité. Un suivi hebdomadaire est mandatoire.
+    expected_layer: policy
+    hint: "Time-bound remediation rule + mandatory tracking = policy"
+
+  - id: clf-028
+    text: >
+      Third-party suppliers handling personal data must sign a Data Processing
+      Agreement prior to contract start. Annual due diligence reviews are
+      mandatory. Non-compliant suppliers must be terminated within 30 days.
+    expected_layer: policy
+    hint: "Rule on supplier relationship + mandatory actions = policy"
+
+  - id: clf-029
+    text: >
+      All production workloads must run in dedicated namespaces with
+      network policies enforced. Privileged containers are prohibited
+      in production. Container images must be scanned before deployment.
+    expected_layer: policy
+    hint: "Technical must/prohibited rules for production = policy"
+
+  - id: clf-030
+    text: >
+      Sensitive data classified as Confidential or above must be encrypted
+      in transit using TLS 1.3 or higher. TLS 1.0 and 1.1 are prohibited
+      across all environments including development and staging.
+    expected_layer: policy
+    hint: "Classification-based encryption rule + prohibition = policy"
+
+  # ── PROCEDURE (5 additional — clf-031..035) ───────────────────────────────
+
+  - id: clf-031
+    text: >
+      New employee access provisioning: (1) HR submits the IAM request form,
+      (2) the line manager approves the access scope, (3) the IAM team creates
+      accounts within 24h, (4) the employee completes security awareness
+      training within 3 days of joining.
+    expected_layer: procedure
+    hint: "Numbered steps with named actors and SLAs = procedure"
+
+  - id: clf-032
+    text: >
+      Patch deployment procedure: the change manager opens a change record,
+      the system owner validates the patch in staging, security approves the
+      risk rating, and ops deploys during the approved maintenance window.
+    expected_layer: procedure
+    hint: "Sequential approval chain with named roles = procedure"
+
+  - id: clf-033
+    text: >
+      Lorsqu'un incident de sécurité P1 est détecté, l'analyste SOC
+      notifie le RSSI dans les 15 minutes, ouvre un ticket Jira Sev1,
+      et convoque la cellule de crise dans les 30 minutes suivant la détection.
+    expected_layer: procedure
+    hint: "Time-bounded steps with named actor and tools = procedure"
+
+  - id: clf-034
+    text: >
+      Supplier exit procedure: (1) contract team sends termination notice,
+      (2) access revocation ticket raised within 24h, (3) data deletion
+      confirmed by supplier within 30 days, (4) CISO signs off on closure report.
+    expected_layer: procedure
+    hint: "Sequential exit steps with CISO sign-off = procedure"
+
+  - id: clf-035
+    text: >
+      Business impact analysis procedure: the BCP coordinator identifies
+      critical processes, assigns RTO/RPO with process owners, validates
+      with IT, and submits the signed BIA report to the BCMS committee.
+    expected_layer: procedure
+    hint: "BCP-specific steps with handoff and output = procedure"
+
+  # ── PROCESS (5 additional — clf-036..040) ────────────────────────────────
+
+  - id: clf-036
+    text: >
+      The vulnerability management lifecycle spans from discovery (scanner/CVE
+      feed), through triage (security team), remediation (system owners),
+      verification (re-scan), to closure with evidence archived in the ITSM.
+    expected_layer: process
+    hint: "End-to-end lifecycle with multiple actors and a loop = process"
+
+  - id: clf-037
+    text: >
+      Le processus de gestion des changements intègre la demande, l'évaluation
+      de risque, l'approbation par le CAB, le déploiement, le test post-déploiement
+      et le retour arrière si échec. Le cycle est déclenché à chaque modification.
+    expected_layer: process
+    hint: "ITIL-style change lifecycle with rollback branch = process"
+
+  - id: clf-038
+    text: >
+      Risk treatment follows a continuous cycle: identify → assess → treat →
+      monitor → review. Risk owners update the register quarterly. The risk
+      committee reviews residual risk appetite alignment semi-annually.
+    expected_layer: process
+    hint: "Continuous cycle with cadence and stakeholders = process"
+
+  - id: clf-039
+    text: >
+      The supplier assurance process runs annually: procurement nominates
+      suppliers for review, security scores them against the risk framework,
+      legal checks compliance, and procurement aggregates results for CISO.
+    expected_layer: process
+    hint: "Annual cycle with multi-team flow = process"
+
+  - id: clf-040
+    text: >
+      Continual improvement is embedded via the PDCA cycle. Findings from
+      audits, incidents, and missed objectives feed into the improvement backlog.
+      Items are prioritised monthly and reviewed quarterly by the ISMS committee.
+    expected_layer: process
+    hint: "PDCA continuous improvement with multiple input sources = process"
+
+  # ── KPI (10 additional — clf-041..050) ───────────────────────────────────
+
+  - id: clf-041
+    text: >
+      Mean Time to Respond (MTTR) — P1 incidents: target ≤ 1 hour from
+      detection to containment. Measured weekly via SIEM dashboards.
+      Breaches trigger a post-incident review within 48 hours.
+    expected_layer: kpi
+    hint: "Named metric + SLA + breach trigger = KPI"
+
+  - id: clf-042
+    text: >
+      Phishing simulation click rate: target ≤ 5% of employees per quarter.
+      Reported by the awareness team each quarter. Users who click are
+      automatically enrolled in mandatory refresher training.
+    expected_layer: kpi
+    hint: "Rate metric + target + automated action = KPI"
+
+  - id: clf-043
+    text: >
+      Patch coverage: ≥ 98% of systems with critical patches applied within
+      SLA. Source: vulnerability scanner. Dashboard updated weekly.
+      Deviations reported in monthly security steering meeting.
+    expected_layer: kpi
+    hint: "Coverage percentage + source + cadence = KPI"
+
+  - id: clf-044
+    text: >
+      Metric — Nombre de non-conformités majeures : objectif ≤ 0 actives
+      pendant plus de 30 jours. Mesuré à chaque audit interne. Toute dérogation
+      supérieure à 30 jours déclenche une revue exceptionnelle du RSSI.
+    expected_layer: kpi
+    hint: "Count metric + zero target + escalation = KPI"
+
+  - id: clf-045
+    text: >
+      API availability SLO: 99.9% monthly uptime for all tier-1 APIs.
+      Measured via synthetic monitoring (1-minute checks). SLO burn
+      alert fires at 5% error budget consumed in a 1-hour window.
+    expected_layer: kpi
+    hint: "SLO with burn rate alert = KPI"
+
+  - id: clf-046
+    text: >
+      SLO — Supplier assurance score: average due-diligence metric ≥ 75/100
+      across critical suppliers. Measured annually. Suppliers scoring below 60
+      must submit a remediation plan within 90 days.
+    expected_layer: kpi
+    hint: "SLO + metric score + measured annually = KPI"
+
+  - id: clf-047
+    text: >
+      Security training completion rate: 100% of employees complete
+      mandatory annual security awareness training by 31 December.
+      Non-completions escalated to HR after 2 reminders.
+    expected_layer: kpi
+    hint: "Completion rate + date target + escalation = KPI"
+
+  - id: clf-048
+    text: >
+      Taux de faux positifs SIEM : objectif ≤ 10 % des alertes générées.
+      Mesuré chaque semaine. Dépassement déclenche un ajustement des règles
+      de détection dans les 5 jours ouvrés.
+    expected_layer: kpi
+    hint: "False-positive rate + threshold + tuning trigger = KPI"
+
+  - id: clf-049
+    text: >
+      SLO — Change success rate: target ≥ 95% of production changes with no
+      unplanned rollback or P1/P2 incident within 24 hours. Reported monthly
+      in the CAB review. Below-target months trigger a CAB retrospective.
+    expected_layer: kpi
+    hint: "SLO success rate + below-target trigger + monthly report = KPI"
+
+  - id: clf-050
+    text: >
+      SLO — Privileged account review completion rate: target 100% of accounts
+      reviewed within 90-day cycles. Metric source: IAM system. Stale accounts
+      (no login > 90 days) suspended automatically. Reported quarterly.
+    expected_layer: kpi
+    hint: "Completion rate + SLO + quarterly report = KPI"

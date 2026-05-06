@@ -1,0 +1,144 @@
+# Generation fixtures — 10 fixtures validating Intent IR → Rego compilation.
+#
+# Each fixture provides a minimal intent structure and the expected Rego
+# output fragments (checked by contains-match, not full equality).
+#
+# Format:
+#   id:              unique fixture ID
+#   intent_id:       built-in control ID (from services/compiler/controls)
+#   target:          "rego" (MVP only)
+#   expect_contains: list of strings that MUST appear in the compiled output
+#   expect_not_contains: list of strings that MUST NOT appear
+
+fixtures:
+
+  # ── C01 DB Backup ──────────────────────────────────────────────────────────
+
+  - id: gen-001
+    intent_id: intent_db_backup_required
+    target: rego
+    expect_contains:
+      - "package egide.policies.db.backup"
+      - "import rego.v1"
+      - "default deny"
+      - "backup.enabled"
+      - "backup.frequency_hours"
+      - "backup.retention_days"
+      - "iso27001-2022:A.8.13"
+      - "nis2:Art.21.2.c"
+    expect_not_contains:
+      - "package egide.policies.iam"
+      - "package egide.policies.network"
+    hint: "C01 must compile to db.backup package with backup assertions"
+
+  - id: gen-002
+    intent_id: intent_db_backup_required
+    target: rego
+    expect_contains:
+      - "sha256:"
+    expect_not_contains: []
+    hint: "Content hash must start with sha256: prefix"
+
+  # ── C02 Encryption at rest ─────────────────────────────────────────────────
+
+  - id: gen-003
+    intent_id: intent_encryption_at_rest
+    target: rego
+    expect_contains:
+      - "package egide.policies.storage.encryption"
+      - "encryption.at_rest"
+      - "encryption.algorithm"
+      - "AES-256"
+      - "ChaCha20-Poly1305"
+      - "iso27001-2022:A.8.24"
+    expect_not_contains:
+      - "mfa.enabled"
+    hint: "C02 must include encryption assertions with approved algorithms"
+
+  # ── C03 Access logging ─────────────────────────────────────────────────────
+
+  - id: gen-004
+    intent_id: intent_access_logging
+    target: rego
+    expect_contains:
+      - "package egide.policies.logging.access"
+      - "default warn"
+      - "logging.access_enabled"
+      - "logging.retention_days"
+      - "iso27001-2022:A.8.15"
+    expect_not_contains:
+      - "default deny"
+    hint: "C03 uses warn decision, not deny"
+
+  - id: gen-005
+    intent_id: intent_access_logging
+    target: rego
+    expect_contains:
+      - "nis2:Art.21.2.i"
+    expect_not_contains: []
+    hint: "C03 must cite NIS2 Art.21.2.i normative anchor"
+
+  # ── C04 MFA enforcement ────────────────────────────────────────────────────
+
+  - id: gen-006
+    intent_id: intent_mfa_enforcement
+    target: rego
+    expect_contains:
+      - "package egide.policies.iam.mfa"
+      - "mfa.enabled"
+      - "mfa.method"
+      - "totp"
+      - "hardware_key"
+      - "passkey"
+      - "iso27001-2022:A.8.5"
+    expect_not_contains:
+      - "package egide.policies.db"
+      - "backup"
+    hint: "C04 must compile to iam.mfa with totp/hardware_key/passkey set"
+
+  - id: gen-007
+    intent_id: intent_mfa_enforcement
+    target: rego
+    expect_contains:
+      - "nis2:Art.21.2.j"
+      - "default deny"
+    expect_not_contains: []
+    hint: "C04 is deny-severity with NIS2 Art.21.2.j anchor"
+
+  # ── C05 Network egress ─────────────────────────────────────────────────────
+
+  - id: gen-008
+    intent_id: intent_network_egress_restriction
+    target: rego
+    expect_contains:
+      - "package egide.policies.network.egress"
+      - "egress.restricted"
+      - "egress.rules_defined"
+      - "iso27001-2022:A.8.20"
+      - "nis2:Art.21.2.e"
+    expect_not_contains:
+      - "logging"
+      - "mfa"
+    hint: "C05 must only reference egress assertions"
+
+  # ── Cross-controls ─────────────────────────────────────────────────────────
+
+  - id: gen-009
+    intent_id: intent_db_backup_required
+    target: rego
+    expect_contains:
+      - "METADATA"
+      - "title:"
+      - "description:"
+    expect_not_contains: []
+    hint: "All controls must include OPA METADATA annotations"
+
+  - id: gen-010
+    intent_id: intent_encryption_at_rest
+    target: rego
+    expect_contains:
+      - "import rego.v1"
+    expect_not_contains:
+      - "import data.egide"
+      - "import future.keywords"
+    hint: "Compiled Rego must use rego.v1 import (OPA >= 0.60), not legacy keywords"

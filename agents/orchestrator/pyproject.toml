@@ -1,0 +1,28 @@
+[project]
+name = "egide-agents-orchestrator"
+version = "0.0.1"
+description = "Egide workflow orchestrator: plain Python state machine driving J1 phases via NATS (NOT a PydanticAI agent — orchestration is deterministic, cf. ADR 011)"
+requires-python = ">=3.13,<3.14"
+license = "AGPL-3.0-only"
+dependencies = [
+    # In-workspace dependencies
+    "egide-agents-common",
+    "egide-agents-compliance",
+    # NATS JetStream client
+    "nats-py>=2.9.0",
+    # Async + structured logging
+    "anyio>=4.6.0",
+    "structlog>=24.4.0",
+    "pydantic>=2.10.0",
+]
+
+[tool.uv.sources]
+egide-agents-common = { workspace = true }
+egide-agents-compliance = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agents_orchestrator"]
