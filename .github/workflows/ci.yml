@@ -88,7 +88,7 @@ jobs:
       - name: Install osv-scanner
         run: |
           set -euo pipefail
-          VERSION=1.9.2
+          VERSION=2.3.6
           curl -sSL -o osv-scanner \
             "https://github.com/google/osv-scanner/releases/download/v${VERSION}/osv-scanner_linux_amd64"
           chmod +x osv-scanner
@@ -115,6 +115,9 @@ jobs:
         with:
           node-version: '20.18.0'
           cache: 'pnpm'
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2.0.1
+        with:
+          bun-version: 1.1.38
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
