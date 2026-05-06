@@ -1,0 +1,89 @@
+{{- /*
+  Post-install / post-upgrade Job that applies Drizzle migrations and
+  the RLS bootstrap (`packages/db/drizzle/0003_rls.sql`) against the
+  operational Postgres.
+
+  Idempotent: re-running it is safe because Drizzle tracks migrations
+  in `__drizzle_migrations` and `0003_rls.sql` uses `IF NOT EXISTS`
+  guards.
+
+  Cf. ADR 014 §A01 (deny-by-default RLS) + ADR 016 (immutable artifacts:
+  this Job runs on a read-only rootfs and pulls a pinned migrator image).
+*/ -}}
+{{- if .Values.migrations.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "egide.fullname" . }}-migrations-{{ .Release.Revision }}
+  labels:
+    {{- include "egide.componentLabels" (dict "Values" .Values "Release" .Release "Chart" .Chart "component" "migrations") | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.backoffLimit | default 3 }}
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        {{- include "egide.componentLabels" (dict "Values" .Values "Release" .Release "Chart" .Chart "component" "migrations") | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "egide.serviceAccountName" . }}
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: {{ include "egide.image" (dict "Values" .Values "Chart" .Chart "repository" .Values.migrations.image.repository "tag" .Values.migrations.image.tag) }}
+          imagePullPolicy: {{ .Values.migrations.image.pullPolicy }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              set -euo pipefail
+              echo "→ applying Drizzle migrations…"
+              node /app/dist/migrate.js
+              echo "→ applying RLS bootstrap as superuser…"
+              # 0003_rls.sql requires CREATE ROLE + ALTER TABLE OWNER, hence
+              # PG_ADMIN_URL (a separate connstring with BYPASSRLS rights),
+              # NOT the runtime DATABASE_URL (egide_app, RLS-enforced).
+              psql "$PG_ADMIN_URL" -v ON_ERROR_STOP=1 \
+                -f /app/drizzle/0003_rls.sql
+              echo "✓ migrations complete"
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "egide.fullname" . }}-config
+                  key: POSTGRES_URL
+                  optional: true
+            - name: PG_ADMIN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "egide.fullname" . }}-config
+                  key: PG_ADMIN_URL
+                  optional: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

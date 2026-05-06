@@ -1,0 +1,18 @@
+{{/*
+Egide pre-install validation:
+- fail if auth.secret is empty (Better-Auth requires ≥32 chars).
+- fail if global.edition is not one of community|professional|enterprise.
+*/}}
+
+{{- if not .Values.auth.secret -}}
+{{- fail "auth.secret must be set. Generate with: openssl rand -base64 48" -}}
+{{- end -}}
+
+{{- if lt (len .Values.auth.secret) 32 -}}
+{{- fail "auth.secret must be at least 32 characters" -}}
+{{- end -}}
+
+{{- $allowedEditions := list "community" "professional" "enterprise" -}}
+{{- if not (has .Values.global.edition $allowedEditions) -}}
+{{- fail (printf "global.edition must be one of: %s" (join ", " $allowedEditions)) -}}
+{{- end -}}

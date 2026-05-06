@@ -1,0 +1,210 @@
+# Egide Helm chart — default values.
+#
+# Sovereign-by-default: no external CDN, no third-party tracker, EU-only
+# image registries. Override anything per environment.
+
+global:
+  edition: community  # community | professional | enterprise
+  domain: egide.local
+  # Scoped to Egide images only — NOT Bitnami's `global.imageRegistry`
+  # (which would override the registry of bundled subcharts and fail their
+  # image-verification check). Subchart images stay on their default registry.
+  egideImageRegistry: ghcr.io/egide-grc
+  imagePullSecrets: []
+
+# ── Components ─────────────────────────────────────────────────────────────
+
+api:
+  enabled: true
+  image:
+    repository: api
+    tag: ""  # defaults to .Chart.AppVersion
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    limits: { cpu: 500m, memory: 512Mi }
+    requests: { cpu: 100m, memory: 128Mi }
+  service:
+    type: ClusterIP
+    port: 3001
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    fsGroup: 10001
+    seccompProfile: { type: RuntimeDefault }
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: ["ALL"] }
+  env: {}  # extra env vars
+  envFromSecret: ""  # name of a Secret to envFrom
+
+validator:
+  enabled: true
+  image:
+    repository: validator
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 500m, memory: 256Mi }
+    requests: { cpu: 50m, memory: 64Mi }
+  service:
+    type: ClusterIP
+    port: 8002
+
+compiler:
+  enabled: true
+  image:
+    repository: compiler
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 500m, memory: 256Mi }
+    requests: { cpu: 50m, memory: 64Mi }
+  service:
+    type: ClusterIP
+    port: 8003
+
+extractor:
+  enabled: true
+  image:
+    repository: extractor
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 1000m, memory: 1Gi }
+    requests: { cpu: 200m, memory: 256Mi }
+  service:
+    type: ClusterIP
+    port: 8001
+
+web:
+  enabled: true
+  image:
+    repository: web
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  resources:
+    limits: { cpu: 500m, memory: 512Mi }
+    requests: { cpu: 100m, memory: 128Mi }
+  service:
+    type: ClusterIP
+    port: 3000
+
+# ── Ingress (TLS via cert-manager) ─────────────────────────────────────────
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: egide.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: web
+        - path: /api
+          pathType: Prefix
+          service: api
+  tls: []
+
+# ── Bundled dependencies (toggle off if using managed services) ────────────
+
+postgresql:
+  enabled: true
+  # When external, set external.postgresUrl below.
+  auth:
+    username: egide
+    password: ""  # generate via random + secret
+    database: egide
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+
+nats:
+  enabled: true
+  jetstream:
+    enabled: true
+  cluster:
+    replicas: 3
+
+clickhouse:
+  enabled: false  # opt-in for telemetry
+
+minio:
+  enabled: true
+  defaultBuckets: "egide-evidence"
+
+# ── External managed services ──────────────────────────────────────────────
+# When using a managed Postgres / S3 / etc. instead of bundled charts.
+
+external:
+  postgresUrl: ""        # postgres://user:pass@host:5432/db
+  # Admin role with BYPASSRLS + CREATE ROLE rights, used ONLY by the
+  # migrations Job to apply 0003_rls.sql. Distinct from postgresUrl which
+  # uses egide_app (RLS-enforced).
+  postgresAdminUrl: ""   # postgres://admin:pass@host:5432/db
+  redisUrl: ""           # redis://...
+  natsUrl: ""            # nats://...
+  s3Endpoint: ""         # https://s3.fr-par.scw.cloud
+  s3AccessKey: ""
+  s3SecretKey: ""
+  s3Bucket: "egide-evidence"
+  clickhouseUrl: ""
+
+# ── Better-Auth secrets ────────────────────────────────────────────────────
+
+auth:
+  # Generate via: openssl rand -base64 48
+  secret: ""
+  # External base URL for cookie scope.
+  baseUrl: "https://egide.local"
+
+# ── LLM provider keys (BYOK; per-tenant keys also supported in DB) ─────────
+
+llm:
+  anthropicApiKey: ""
+  mistralApiKey: ""
+  scalewayAiKey: ""
+  ovhAiKey: ""
+  localUrl: "http://ollama:11434"
+  localModel: "mistral:7b-instruct"
+
+# ── Observability ──────────────────────────────────────────────────────────
+
+observability:
+  otelEndpoint: ""  # http://otel-collector:4318
+  logLevel: info
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true  # restrict egress per ADR 014 §A05
+
+# ── Migrations Job (post-install / post-upgrade) ───────────────────────────
+# Applies Drizzle migrations + RLS bootstrap (`0003_rls.sql`) against the
+# operational Postgres. Idempotent. Required on first install.
+
+migrations:
+  enabled: true
+  image:
+    repository: migrator
+    tag: ""           # defaults to .Chart.AppVersion
+    pullPolicy: IfNotPresent
+  backoffLimit: 3
