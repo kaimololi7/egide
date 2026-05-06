@@ -1,0 +1,131 @@
+/*
+ * Egide — Base styles.
+ *
+ * Modest reset and global element defaults. Imports tokens.css.
+ * Imported once per app; component styles never re-define globals.
+ */
+
+@import "./tokens.css";
+
+/* ── Reset ──────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--egide-font-ui);
+  font-size: var(--egide-text-base);
+  line-height: var(--egide-leading-normal);
+  color: var(--egide-color-text-primary);
+  background: var(--egide-color-bg);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+#root,
+#__next {
+  isolation: isolate;
+}
+
+/* ── Headings (default; landing-specific in section CSS) ─ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--egide-font-ui);
+  font-weight: var(--egide-weight-semibold);
+  line-height: var(--egide-leading-tight);
+  letter-spacing: var(--egide-tracking-tight);
+}
+
+/* ── Code (always JetBrains Mono) ───────────────────────── */
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--egide-font-mono);
+  font-size: 0.9375em;
+}
+
+/* ── Focus visible (accent ring 2px offset) ─────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--egide-color-accent);
+  outline-offset: 2px;
+  border-radius: var(--egide-radius);
+}
+
+/* ── Selection ──────────────────────────────────────────── */
+
+::selection {
+  background: var(--egide-color-accent-muted);
+  color: var(--egide-color-text-primary);
+}
+
+/* ── Scrollbars (subtle, sober) ─────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--egide-color-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--egide-color-border-strong);
+  border-radius: var(--egide-radius-sm);
+}
