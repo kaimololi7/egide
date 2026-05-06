@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "@egide/ui/styles/tokens.css";
+@import "@egide/ui/styles/base.css";
+
+/*
+ * Landing-specific overrides only. All design tokens (colors, spacing,
+ * typography, motion) come from @egide/ui per ADR 017.
+ *
+ * Anti-AI-slop guardrails (cf. ADR 017):
+ *   - no aurora / mesh gradient / orb glow
+ *   - no border-radius > 8px
+ *   - no box-shadow elevation
+ *   - no decorative animation > 200ms
+ *   - dark mode default
+ */
+
+html {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-sans, "Inter Tight", system-ui, sans-serif);
+  font-feature-settings: "ss01", "cv02";
+}
+
+/* Section borders only — no shadows. */
+.hairline {
+  border: 1px solid var(--color-border);
+}
+
+.mono {
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+}

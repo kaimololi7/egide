@@ -34,3 +34,10 @@ export {
 export { LLMRouter } from "./router.js";
 export { scrubPII } from "./internal/scrubber.js";
 export { editionAllows, FEATURE_REQUIREMENTS } from "./edition.js";
+
+export { AnthropicProvider } from "./providers/anthropic.js";
+export type { AnthropicConfig } from "./providers/anthropic.js";
+export { MistralProvider } from "./providers/mistral.js";
+export type { MistralConfig } from "./providers/mistral.js";
+export { OllamaProvider } from "./providers/ollama.js";
+export type { OllamaConfig } from "./providers/ollama.js";

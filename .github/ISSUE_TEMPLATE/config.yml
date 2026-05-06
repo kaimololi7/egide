@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/egide/egide/security/advisories/new
+    about: Report privately via GitHub Security Advisories. See SECURITY.md.
+  - name: Discussion / question
+    url: https://github.com/egide/egide/discussions
+    about: Architecture questions, roadmap input, "how do I…" — not bugs.
+  - name: Commercial / Pro / Enterprise
+    url: https://egide.eu/contact
+    about: Pricing, SLA, MSSP white-label, on-prem support.

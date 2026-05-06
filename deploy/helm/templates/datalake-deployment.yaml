@@ -1,0 +1,3 @@
+{{- if .Values.datalake.enabled -}}
+{{- include "egide.componentDeployment" (dict "name" "datalake" "values" .Values.datalake "root" .) }}
+{{- end }}

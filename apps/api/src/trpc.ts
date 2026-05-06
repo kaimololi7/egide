@@ -40,7 +40,7 @@ export interface CreateContextArgs {
 }
 
 export async function createContext(args: CreateContextArgs): Promise<ApiContext> {
-  const session = await resolveSession(args.auth, args.req);
+  const session = await resolveSession(args.auth, args.req, args.env);
   return {
     traceId: args.traceId,
     session,
@@ -92,6 +92,38 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   }
   return next({ ctx });
 });
+
+/**
+ * Service-account procedure — accepts machine-to-machine bearer tokens
+ * (orchestrator, compiler, future internal workers). The caller must
+ * supply X-Egide-Tenant-Id header so we know which tenant to scope to.
+ *
+ * Use a `requireScope` callback to enforce specific scopes per
+ * procedure (e.g., "pyramid:persist", "llm:complete").
+ */
+export function serviceProcedure(requiredScope: string) {
+  return t.procedure.use(({ ctx, next }) => {
+    if (!ctx.session?.service) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "service-account auth required",
+      });
+    }
+    if (!ctx.session.scopes?.includes(requiredScope)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `scope ${requiredScope} required`,
+      });
+    }
+    return next({
+      ctx: {
+        ...ctx,
+        session: ctx.session,
+        tenantId: ctx.session.tenantId,
+      },
+    });
+  });
+}
 
 /**
  * Root router — all subrouters under v1 namespace.

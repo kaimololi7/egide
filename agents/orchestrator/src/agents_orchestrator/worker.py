@@ -35,6 +35,15 @@ VALIDATOR_URL = os.getenv("EGIDE_VALIDATOR_URL", "http://localhost:8002")
 COMPILER_URL = os.getenv("EGIDE_COMPILER_URL", "http://localhost:8003")
 API_URL = os.getenv("EGIDE_API_URL", "http://localhost:3001")
 
+# Service-account bearer token (sha256 must match an entry in
+# apps/api EGIDE_SERVICE_TOKENS with scope "pyramid:persist").
+SERVICE_TOKEN = os.getenv("EGIDE_ORCHESTRATOR_TOKEN", "")
+
+# When set to "1", the drafting phase calls /v1/llm/complete instead of
+# emitting deterministic templates. Requires SERVICE_TOKEN with scope
+# "llm:complete" and a working provider on the API side.
+LLM_ENABLED = os.getenv("EGIDE_LLM_ENABLED", "0") == "1"
+
 PHASE_TIMEOUT_S = float(os.getenv("EGIDE_PHASE_TIMEOUT_S", "60.0"))
 
 
@@ -236,13 +245,17 @@ class OrchestratorWorker:
         machine.set_anchors(anchors)
 
     async def _phase_drafting(self, machine: J1StateMachine) -> None:
-        """Templated drafting that cites the real anchors from anchoring.
+        """Draft policy artifacts citing the resolved anchors.
 
-        Real PydanticAI generation via LLMRouterClient lands when a
-        per-tenant LLM credential is wired to the orchestrator (M4+).
-        Until then we emit a deterministic policy skeleton citing every
-        anchor — already useful and respects rule Q01 (no hallucination
-        because no LLM call).
+        Two paths:
+          - EGIDE_LLM_ENABLED=1 + SERVICE_TOKEN set → real LLM call to
+            apps/api `/v1/llm/complete` (one call per anchor cluster).
+          - Otherwise → deterministic template (degraded mode, respects
+            rule Q01: no hallucination because no LLM call).
+
+        The LLM result is asked to be JSON ; on parse failure we fall
+        back to the templated draft for that cluster so the pipeline
+        keeps moving.
         """
         await self._publish_progress(
             machine.state, J1Phase.DRAFTING, "drafting policy artifacts"
@@ -270,6 +283,8 @@ class OrchestratorWorker:
             prefix = clause.split(".")[0] if "." in clause else clause or "_"
             clusters.setdefault(prefix, []).append(a)
 
+        use_llm = LLM_ENABLED and bool(SERVICE_TOKEN) and self._http is not None
+
         drafts: list[dict[str, Any]] = []
         for prefix, group in clusters.items():
             cited = [
@@ -277,25 +292,114 @@ class OrchestratorWorker:
                 for a in group
                 if a.get("framework") and a.get("clause")
             ]
-            drafts.append(
-                {
-                    "title": f"Policy on {machine.state.framework} {prefix}",
-                    "scope": f"All systems within ISMS scope (anchored: {prefix})",
-                    "purpose": "Apply the requirements of the cited normative clauses.",
-                    "normative_references": cited,
-                    "anchors": group,
-                    "review_cycle_months": 12,
-                    "owner": "ISMS Manager",
-                    "layer": "policy",
-                }
-            )
+            templated = {
+                "title": f"Policy on {machine.state.framework} {prefix}",
+                "scope": f"All systems within ISMS scope (anchored: {prefix})",
+                "purpose": "Apply the requirements of the cited normative clauses.",
+                "normative_references": cited,
+                "anchors": group,
+                "review_cycle_months": 12,
+                "owner": "ISMS Manager",
+                "layer": "policy",
+            }
+
+            if use_llm:
+                llm_draft = await self._llm_draft_for_cluster(
+                    machine, prefix, group, cited
+                )
+                if llm_draft is not None:
+                    drafts.append(llm_draft)
+                    continue
+
+            drafts.append(templated)
 
         logger.info(
-            "drafting produced %d policy drafts from %d clusters",
+            "drafting produced %d policy drafts from %d clusters (llm=%s)",
             len(drafts),
             len(clusters),
+            use_llm,
         )
         machine.set_drafts(drafts)
+
+    async def _llm_draft_for_cluster(
+        self,
+        machine: J1StateMachine,
+        prefix: str,
+        anchors: list[dict[str, Any]],
+        cited: list[str],
+    ) -> dict[str, Any] | None:
+        """Call apps/api /v1/llm/complete to draft one policy.
+
+        Returns the parsed JSON draft, or None on any failure (caller
+        falls back to the templated draft).
+        """
+        if self._http is None:
+            return None
+
+        anchor_summary = "\n".join(
+            f"- {a.get('framework')} {a.get('clause')}: {a.get('title') or ''}"
+            for a in anchors
+        )
+
+        system = (
+            "You are a compliance writer. Produce a single ISMS policy as STRICT "
+            "JSON with keys: title, scope, purpose, principles (array of strings), "
+            "responsibilities (array of strings), normative_references (array of "
+            "strings). Cite ONLY the normative anchors provided ; never invent "
+            "clauses. Output JSON only, no prose, no markdown fences."
+        )
+        user = (
+            f"Framework: {machine.state.framework}\n"
+            f"Cluster: {prefix}\n"
+            f"Anchors:\n{anchor_summary}\n\n"
+            "Draft the policy."
+        )
+
+        try:
+            res = await self._http.post(
+                f"{API_URL}/v1/llm/complete",
+                json={
+                    "task": "generation",
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                    "max_tokens": 1500,
+                    "temperature": 0.2,
+                    "context_ref": f"draft:{machine.state.pyramid_id}:{prefix}",
+                    "pyramid_id": machine.state.pyramid_id,
+                    "trace_id": machine.state.trace_id,
+                },
+                headers={
+                    "Authorization": f"Bearer {SERVICE_TOKEN}",
+                    "X-Egide-Tenant-Id": machine.state.tenant_id,
+                    "X-Trace-Id": machine.state.trace_id,
+                },
+                timeout=120.0,
+            )
+            if res.status_code >= 400:
+                logger.warning(
+                    "llm draft for %s failed status=%d body=%s",
+                    prefix,
+                    res.status_code,
+                    res.text[:200],
+                )
+                return None
+            content = res.json().get("content", "").strip()
+            parsed_raw = json.loads(content)
+            if not isinstance(parsed_raw, dict):
+                logger.warning("llm draft for %s: not a JSON object", prefix)
+                return None
+            parsed: dict[str, Any] = parsed_raw
+            # Re-attach machine-readable references the LLM doesn't see.
+            parsed["normative_references"] = cited
+            parsed["anchors"] = anchors
+            parsed["layer"] = "policy"
+            parsed.setdefault("review_cycle_months", 12)
+            parsed.setdefault("owner", "ISMS Manager")
+            return parsed
+        except (httpx.HTTPError, json.JSONDecodeError, ValueError) as exc:
+            logger.warning("llm draft fallback for %s: %s", prefix, exc)
+            return None
+
 
     async def _phase_validating(self, machine: J1StateMachine) -> None:
         await self._publish_progress(
@@ -356,6 +460,13 @@ class OrchestratorWorker:
         title = f"J1 pyramid · {machine.state.framework}"
 
         try:
+            persist_headers = {
+                "X-Trace-Id": machine.state.trace_id,
+                "X-Egide-Tenant-Id": machine.state.tenant_id,
+            }
+            if SERVICE_TOKEN:
+                persist_headers["Authorization"] = f"Bearer {SERVICE_TOKEN}"
+
             # tRPC over HTTP — protocol expects POST /trpc/v1.pyramid.persist
             # with { json: <input> } envelope (httpBatchLink format).
             res = await self._http.post(
@@ -370,10 +481,7 @@ class OrchestratorWorker:
                         "status": "draft",
                     },
                 },
-                headers={
-                    "X-Trace-Id": machine.state.trace_id,
-                    "X-Tenant-Id": machine.state.tenant_id,
-                },
+                headers=persist_headers,
             )
             if res.status_code >= 400:
                 logger.warning(

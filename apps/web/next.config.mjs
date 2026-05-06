@@ -3,6 +3,10 @@ const nextConfig = {
   // Strict React
   reactStrictMode: true,
 
+  // Standalone output for minimal container image (cf. apps/web/Dockerfile).
+  // Produces .next/standalone/server.js + .next/static.
+  output: "standalone",
+
   // Transpile workspace packages
   transpilePackages: ["@egide/ui", "@egide/api"],
 

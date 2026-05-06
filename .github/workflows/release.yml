@@ -1,0 +1,191 @@
+# Release workflow — tag-driven.
+#
+# Triggered when a tag matching v*.*.* is pushed. Produces:
+#   - GitHub Release with auto-generated notes (cf. .github/release.yml)
+#   - Multi-arch container images for apps/api, apps/web, services/*,
+#     agents/*, edge/agent — pushed to ghcr.io
+#   - Cosign signatures + CycloneDX SBOM per image (cf. ADR 016)
+#   - Source tarball
+#   - Helm chart packaged + uploaded as release asset
+#
+# Container registry: ghcr.io/egide/<component>
+# OIDC keyless cosign signing (no key material in repo).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write       # create release, upload assets
+  packages: write       # push images to ghcr.io
+  id-token: write       # cosign keyless signing
+  attestations: write   # SLSA provenance
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # 1. Sanity — re-run the full CI gate before publishing anything
+  # ──────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI gate
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  # ──────────────────────────────────────────────────────────────
+  # 2. Build + sign + SBOM each container image
+  # ──────────────────────────────────────────────────────────────
+  images:
+    name: Build & sign images
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Build context is the monorepo root for every component because
+        # workspace dependencies (pnpm `@egide/*`, uv `egide-agents-common`,
+        # `go.work`) require sibling source trees. Per-component Dockerfile
+        # paths live next to the service they build.
+        #
+        # Note: `agents/compliance` is a Python library consumed in-process
+        # by `agents/orchestrator` (cf. ADR 011 Strategy B — single
+        # super-agent). It ships inside the orchestrator image and has no
+        # standalone Dockerfile.
+        component:
+          - { name: api,           dockerfile: apps/api/Dockerfile }
+          - { name: web,           dockerfile: apps/web/Dockerfile }
+          - { name: cli,           dockerfile: apps/cli/Dockerfile }
+          - { name: extractor,     dockerfile: services/extractor/Dockerfile }
+          - { name: validator,     dockerfile: services/validator/Dockerfile }
+          - { name: compiler,      dockerfile: services/compiler/Dockerfile }
+          - { name: pipeline,      dockerfile: services/pipeline/Dockerfile }
+          - { name: datalake,      dockerfile: services/datalake/Dockerfile }
+          - { name: orchestrator,  dockerfile: agents/orchestrator/Dockerfile }
+          - { name: edge-agent,    dockerfile: edge/agent/Dockerfile }
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry:.
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push (multi-arch)
+        id: build
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
+        with:
+          context: ${{ matrix.component.context }}
+          file: ${{ matrix.component.dockerfile }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/egide/${{ matrix.component.name }}:${{ github.ref_name }}
+            ghcr.io/egide/${{ matrix.component.name }}:latest
+          provenance: true
+          sbom: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/egide/egide
+            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
+
+      - name: Cosign keyless sign
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes \
+            ghcr.io/egide/${{ matrix.component.name }}@${DIGEST}
+
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
+        with:
+          image: ghcr.io/egide/${{ matrix.component.name }}@${{ steps.build.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-${{ matrix.component.name }}.cdx.json
+
+      - name: Cosign attest SBOM
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign attest --yes \
+            --predicate sbom-${{ matrix.component.name }}.cdx.json \
+            --type cyclonedx \
+            ghcr.io/egide/${{ matrix.component.name }}@${DIGEST}
+
+      - name: Upload SBOM as artefact
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: sbom-${{ matrix.component.name }}
+          path: sbom-${{ matrix.component.name }}.cdx.json
+          retention-days: 90
+
+  # ──────────────────────────────────────────────────────────────
+  # 3. Helm chart package
+  # ──────────────────────────────────────────────────────────────
+  helm:
+    name: Helm chart
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4.2.0
+        with:
+          version: v3.15.4
+      - name: Lint
+        run: helm lint deploy/helm
+      - name: Package
+        run: |
+          mkdir -p dist
+          helm package deploy/helm --version "${GITHUB_REF_NAME#v}" --destination dist
+      - name: Upload chart artefact
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: helm-chart
+          path: dist/*.tgz
+          retention-days: 90
+
+  # ──────────────────────────────────────────────────────────────
+  # 4. GitHub Release — auto notes + attach SBOMs + Helm chart
+  # ──────────────────────────────────────────────────────────────
+  release:
+    name: GitHub Release
+    needs: [images, helm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+
+      - name: Download all artefacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: release-assets
+
+      - name: Flatten SBOMs + chart
+        run: |
+          mkdir -p flat
+          find release-assets -type f \( -name "*.cdx.json" -o -name "*.tgz" \) -exec cp {} flat/ \;
+          ls -la flat/
+
+      - name: Create release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: flat/*

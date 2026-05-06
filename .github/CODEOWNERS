@@ -1,0 +1,41 @@
+# Egide CODEOWNERS
+#
+# Reviewers required by GitHub branch protection. Until a real team
+# exists, the maintainer owns everything. Update when contributors
+# graduate to maintainer status.
+#
+# Cf. ADR 016 §SDLC.
+
+# Default owner for everything in the repo.
+*                                     @mush
+
+# Architecture decisions — every ADR change requires a second pair of eyes
+# once the team grows. Today: single maintainer.
+/docs/adr/                            @mush
+
+# Security-sensitive surfaces.
+/SECURITY.md                          @mush
+/docs/security.md                     @mush
+/docs/threat-models/                  @mush
+/.github/                             @mush
+/.github/workflows/                   @mush
+
+# Cross-language wire contracts (touch with care).
+/docs/specs/                          @mush
+/packages/oscal/                      @mush
+/packages/messaging/                  @mush
+/packages/llm-router/                 @mush
+
+# Compiler — the moat.
+/services/compiler/                   @mush
+/services/validator/                  @mush
+
+# AI workers and ontology.
+/agents/                              @mush
+/ontologies/                          @mush
+
+# Frontend identity (cf. ADR 017).
+/apps/web/                            @mush
+/packages/ui/                         @mush
+/docs/design-system.md                @mush
+/docs/landing-blueprint.md            @mush

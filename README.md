@@ -1,5 +1,12 @@
 # Egide
 
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-full--strict-success)](.github/workflows/ci.yml)
+[![ADRs](https://img.shields.io/badge/ADRs-17-informational)](docs/adr/)
+[![Threat models](https://img.shields.io/badge/threat--models-4-informational)](docs/threat-models/)
+[![Stack](https://img.shields.io/badge/stack-TS%20%7C%20Go%20%7C%20Python-lightgrey)](docs/architecture.md)
+[![Sovereign](https://img.shields.io/badge/hosting-EU%20%2B%20air--gappable-darkgreen)](docs/adr/001-foundation.md)
+
 > **From a signed directive to a Rego rule blocking a non-compliant Pod.**
 >
 > Open-source GRC that compiles your governance into runnable policies.
@@ -90,17 +97,21 @@ See [`docs/security.md`](docs/security.md) for the operational guide.
 
 ## Status
 
-**Pre-MVP / M0 — foundation phase.** Public scaffolding, ontologies migrated,
-DB schema, 16 ADRs gravé. Application code starts in M1.
+**M5 closing → M6 ramp-up.** ~16 kLOC of source across TS + Go + Python ;
+full J1 pipeline livré (extraction → classification → anchors → drafting →
+validation → persistence) ; Rego compiler with 5 production controls ;
+Ansible target with Molecule scenarios ; OSCAL SSP export ; Better-Auth +
+RLS + Helm chart shipped.
 
-See [`STATUS.md`](STATUS.md) and [`docs/roadmap.md`](docs/roadmap.md).
+See [`STATUS.md`](STATUS.md) for the per-sprint changelog and
+[`docs/roadmap.md`](docs/roadmap.md) for the long-form plan.
 
 This project consolidates and replaces two prior personal experiments:
 [`process-pyramid`](https://github.com/...) (frontend + ontologies) and
 [`aegis-platform`](https://github.com/...) (Go backend + Python framework).
 See [`docs/migration.md`](docs/migration.md).
 
-## Quick start (when first MVP lands)
+## Quick start
 
 ```bash
 git clone https://github.com/egide/egide.git
@@ -121,6 +132,17 @@ egide pyramid generate --frameworks iso27001,nis2 --input docs/
 egide compile rego <intent-id>
 egide approval list --pending
 ```
+
+Full end-to-end demo (drop docs → pyramid → Rego bundle → k3d sandbox
+rejecting a bad Deployment) :
+
+```bash
+./scripts/e2e-demo.sh             # end-to-end with k3d
+./scripts/e2e-demo.sh --no-k3d    # offline OPA eval only
+./scripts/e2e-demo.sh --teardown  # remove cluster + compose stack
+```
+
+Walk-through tutorials live in [`docs/tutorials/`](docs/tutorials/).
 
 ## License
 

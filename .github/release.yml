@@ -1,0 +1,26 @@
+# Auto-generated release notes config (Egide).
+# Used by the release.yml workflow + the GitHub UI when drafting releases.
+
+changelog:
+  exclude:
+    labels: [duplicate, invalid, wontfix, question]
+    authors: [dependabot, renovate]
+  categories:
+    - title: "🚨 Security fixes"
+      labels: [security]
+    - title: "✨ Features"
+      labels: [feat, enhancement]
+    - title: "🐛 Bug fixes"
+      labels: [bug, fix]
+    - title: "🧱 Refactors"
+      labels: [refactor]
+    - title: "📚 Documentation"
+      labels: [docs]
+    - title: "🧪 Tests"
+      labels: [test]
+    - title: "⚙️ CI & tooling"
+      labels: [ci, chore]
+    - title: "🔧 Dependencies"
+      labels: [deps]
+    - title: "Other"
+      labels: ["*"]

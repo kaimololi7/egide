@@ -10,6 +10,7 @@
  */
 
 import { db, schema } from "@egide/db";
+import { serializePyramidToSSP, type PyramidSnapshot } from "@egide/oscal";
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
@@ -154,8 +155,15 @@ export const auditRouter = router({
     }),
 
   /**
-   * (Pro+) Export pyramid as OSCAL SSP. Returns a download URL.
-   * Status: stub — returns a dummy URL until OSCAL serializer lands (M5+).
+   * Export the latest version of a pyramid as an OSCAL 1.1.x System
+   * Security Plan. Returns the SSP JSON inline (≤ 1 MB typical).
+   *
+   * Persistence to S3 + Ed25519 signing lands at M5+ with the auditor
+   * view (J5). At MVP the caller is expected to redirect-download or
+   * forward the JSON to evidence storage themselves.
+   *
+   * Tenant isolation: the pyramid + version lookup are scoped to
+   * ctx.tenantId, so a tenant cannot export another tenant's SSP.
    */
   exportOSCAL: protectedProcedure
     .input(z.object({ pyramidId: z.string().uuid() }))
@@ -163,10 +171,69 @@ export const auditRouter = router({
       if (!ctx.tenantId) throw new TRPCError({ code: "UNAUTHORIZED" });
       ctx.logger.info({ pyramidId: input.pyramidId }, "audit.exportOSCAL");
 
-      // TODO M5+: serialize pyramid to OSCAL JSON, sign, store, return signed URL
-      throw new TRPCError({
-        code: "NOT_IMPLEMENTED",
-        message: "OSCAL export lands at M5 with the auditor view (J5)",
+      const [pyramid] = await db
+        .select({
+          id: schema.pyramids.id,
+          title: schema.pyramids.title,
+        })
+        .from(schema.pyramids)
+        .where(
+          and(
+            eq(schema.pyramids.id, input.pyramidId),
+            eq(schema.pyramids.tenantId, ctx.tenantId),
+          ),
+        );
+      if (!pyramid) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const [version] = await db
+        .select({
+          id: schema.pyramidVersions.id,
+          version: schema.pyramidVersions.version,
+          graphSnapshot: schema.pyramidVersions.graphSnapshot,
+          contentHash: schema.pyramidVersions.contentHash,
+        })
+        .from(schema.pyramidVersions)
+        .where(eq(schema.pyramidVersions.pyramidId, pyramid.id))
+        .orderBy(desc(schema.pyramidVersions.createdAt))
+        .limit(1);
+      if (!version) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "pyramid has no version yet — generate one first",
+        });
+      }
+
+      const ssp = serializePyramidToSSP({
+        pyramidId: pyramid.id,
+        pyramidTitle: pyramid.title,
+        versionId: version.id,
+        versionLabel: version.version,
+        contentHash: version.contentHash,
+        tenantId: ctx.tenantId,
+        snapshot: (version.graphSnapshot ?? {}) as PyramidSnapshot,
       });
+
+      // Audit trail entry — exporting an SSP is a security-relevant action.
+      await db.insert(schema.auditLogs).values({
+        tenantId: ctx.tenantId,
+        pyramidId: pyramid.id,
+        actorId: ctx.session?.userId ?? ctx.env.EGIDE_SYSTEM_USER_ID,
+        action: "audit.exportOSCAL",
+        payload: {
+          versionId: version.id,
+          contentHash: version.contentHash,
+          sspUuid: ssp["system-security-plan"].uuid,
+        },
+      });
+
+      return {
+        ssp,
+        meta: {
+          pyramidId: pyramid.id,
+          versionId: version.id,
+          contentHash: version.contentHash,
+          sspUuid: ssp["system-security-plan"].uuid,
+        },
+      };
     }),
 });

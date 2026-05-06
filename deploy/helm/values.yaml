@@ -95,6 +95,61 @@ web:
     type: ClusterIP
     port: 3000
 
+# Orchestrator — Python NATS worker driving the J1 pipeline. No HTTP
+# port (consumes egide.v1.* subjects), so no Service is rendered.
+# Liveness uses an exec probe on the python process.
+orchestrator:
+  enabled: true
+  image:
+    repository: orchestrator
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 1000m, memory: 1Gi }
+    requests: { cpu: 100m, memory: 256Mi }
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    fsGroup: 65532
+    seccompProfile: { type: RuntimeDefault }
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: ["ALL"] }
+
+# Pipeline — Go event ingestion service. Scaffold today, implementation
+# lands at M7+ (cf. roadmap). Disabled by default; enable when ready.
+pipeline:
+  enabled: false
+  image:
+    repository: pipeline
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 500m, memory: 256Mi }
+    requests: { cpu: 50m, memory: 64Mi }
+  service:
+    type: ClusterIP
+    port: 8004
+
+# Datalake — Go ClickHouse audit-trail service. Scaffold today,
+# implementation lands at M8+ (cf. roadmap). Disabled by default.
+datalake:
+  enabled: false
+  image:
+    repository: datalake
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  resources:
+    limits: { cpu: 500m, memory: 256Mi }
+    requests: { cpu: 50m, memory: 64Mi }
+  service:
+    type: ClusterIP
+    port: 8005
+
 # ── Ingress (TLS via cert-manager) ─────────────────────────────────────────
 
 ingress:

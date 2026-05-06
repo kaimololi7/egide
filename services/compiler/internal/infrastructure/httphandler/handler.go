@@ -15,6 +15,7 @@ import (
 
 	"github.com/egide/egide/services/compiler/internal/application"
 	"github.com/egide/egide/services/compiler/internal/domain"
+	"github.com/egide/egide/services/compiler/internal/generators/ansible"
 	"github.com/egide/egide/services/compiler/internal/generators/rego/controls"
 )
 
@@ -63,6 +64,20 @@ func (h *Handler) compile(c echo.Context) error {
 	if err != nil {
 		c.Logger().Errorf("compile: %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	// For Ansible, attach the Molecule scenario alongside the playbook so
+	// the CLI can write a ready-to-run test harness on disk.
+	if req.Target == string(domain.TargetAnsible) {
+		scenario, mErr := ansible.EmitMoleculeScenario(req.Intent, "playbook.yml")
+		if mErr != nil {
+			c.Logger().Errorf("compile: emit molecule: %v", mErr)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": mErr.Error()})
+		}
+		return c.JSON(http.StatusOK, map[string]any{
+			"artifact":    artifact,
+			"extra_files": scenario.Files,
+		})
 	}
 	return c.JSON(http.StatusOK, artifact)
 }

@@ -1,0 +1,102 @@
+name: Bug report
+description: Something does not work as documented.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        **Before submitting**:
+        - Search [open and closed issues](https://github.com/egide/egide/issues?q=is%3Aissue) — duplicates are closed.
+        - For security vulnerabilities, **do not open a public issue** — see [SECURITY.md](../../SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: Egide version
+      description: Output of `egide --version` or git commit SHA.
+      placeholder: "0.1.0 / 7eb16f7a"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Edition
+      options:
+        - Community (AGPL-3.0)
+        - Professional
+        - Enterprise
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - apps/web
+        - apps/api
+        - apps/cli
+        - services/extractor
+        - services/validator
+        - services/compiler
+        - services/pipeline
+        - services/datalake
+        - agents/compliance
+        - agents/orchestrator
+        - edge/agent
+        - packages/llm-router
+        - packages/messaging
+        - packages/oscal
+        - packages/ui
+        - deploy (Docker / Helm / Proxmox)
+        - docs / ontologies
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description + actual vs expected behaviour.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps. Include commands, configs, fixtures.
+      placeholder: |
+        1. `docker compose up -d`
+        2. `egide pyramid generate ...`
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / error output
+      render: shell
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "macOS 14.4 / Ubuntu 24.04 / k3d 5.6 / Bun 1.1.x / Go 1.23 / Python 3.13"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have read [SECURITY.md](../../SECURITY.md) and this is NOT a security vulnerability.
+          required: true
+        - label: I have searched existing issues for duplicates.
+          required: true

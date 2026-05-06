@@ -35,6 +35,9 @@ importers:
       '@egide/messaging':
         specifier: workspace:*
         version: link:../../packages/messaging
+      '@egide/oscal':
+        specifier: workspace:*
+        version: link:../../packages/oscal
       '@hono/trpc-server':
         specifier: ^0.3.4
         version: 0.3.4(@trpc/server@11.17.0(typescript@5.9.3))(hono@4.12.16)
@@ -124,6 +127,9 @@ importers:
       lucide-react:
         specifier: ^0.460.0
         version: 0.460.0(react@19.2.5)
+      nats:
+        specifier: ^2.29.3
+        version: 2.29.3
       next:
         specifier: ^15.0.3
         version: 15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -208,6 +214,25 @@ importers:
       nats:
         specifier: ^2.28.2
         version: 2.29.3
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.0
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.4
+        version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
+
+  packages/oscal:
+    dependencies:
       zod:
         specifier: ^3.23.8
         version: 3.25.76

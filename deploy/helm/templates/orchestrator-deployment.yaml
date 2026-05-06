@@ -1,0 +1,47 @@
+{{- if .Values.orchestrator.enabled -}}
+{{/*
+Orchestrator — Python NATS worker. No HTTP port, no Service.
+Liveness probe uses `pgrep` on the python process.
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "egide.fullname" . }}-orchestrator
+  labels: {{- include "egide.componentLabels" (merge (dict "component" "orchestrator") .) | nindent 4 }}
+spec:
+  replicas: {{ .Values.orchestrator.replicaCount }}
+  selector:
+    matchLabels: {{- include "egide.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: orchestrator
+  template:
+    metadata:
+      labels: {{- include "egide.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: orchestrator
+      {{- with .Values.podAnnotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "egide.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {{- toYaml .Values.orchestrator.podSecurityContext | nindent 8 }}
+      containers:
+        - name: orchestrator
+          image: {{ include "egide.image" (merge (dict "repository" .Values.orchestrator.image.repository "tag" .Values.orchestrator.image.tag) .) }}
+          imagePullPolicy: {{ .Values.orchestrator.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "egide.fullname" . }}-config
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import sys; sys.exit(0)"]
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources: {{- toYaml .Values.orchestrator.resources | nindent 12 }}
+          securityContext: {{- toYaml .Values.orchestrator.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+{{- end }}

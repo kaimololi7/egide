@@ -2,9 +2,10 @@
 
 Thanks for considering a contribution. Read this before opening a PR.
 
-> **Status**: Egide is in pre-MVP solo-author scaffolding (M0). External
-> contributions are welcome but expect slow review until M6 (public
-> release). After M6, response time becomes our priority.
+> **Status**: M5 closing → M6 ramp-up. External contributions are
+> welcome — expect a 3–7 day review window until v1.0. Read [`STATUS.md`](STATUS.md)
+> for the current sprint and [`docs/roadmap.md`](docs/roadmap.md) for
+> what's planned next.
 
 ## Code of conduct
 
