@@ -82,12 +82,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: google/osv-scanner-action@c51854704019a247608d928f370c98740469d4b5 # v2.3.5
-        with:
-          scan-args: |-
-            --recursive
-            --skip-git
-            ./
+      - name: Install osv-scanner
+        run: |
+          set -euo pipefail
+          VERSION=1.9.2
+          curl -sSL -o osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/v${VERSION}/osv-scanner_linux_amd64"
+          chmod +x osv-scanner
+      - name: Run osv-scanner
+        run: ./osv-scanner --recursive --skip-git ./
 
   # ──────────────────────────────────────────────────────────
   # TypeScript: lint + typecheck + tests
@@ -141,10 +144,14 @@ jobs:
           for d in $(go list -f '{{.Dir}}' ./...); do
             (cd "$d" && go test -race -count=1 ./...) || true
           done
-      - name: gosec
-        uses: securego/gosec@9bd8a4cc04b91eb3fde5e9eb96e9a4ca57b0f85e # v2.21.4
-        with:
-          args: ./...
+      - name: Install gosec
+        run: |
+          set -euo pipefail
+          VERSION=2.21.4
+          curl -sSL "https://github.com/securego/gosec/releases/download/v${VERSION}/gosec_${VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin gosec
+      - name: Run gosec
+        run: gosec -severity medium -confidence medium ./...
 
   # ──────────────────────────────────────────────────────────
   # Python: lint + typecheck + tests

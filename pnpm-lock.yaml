@@ -110,6 +110,46 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(@types/node@22.19.17)(lightningcss@1.32.0)
 
+  apps/landing:
+    dependencies:
+      '@egide/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      lucide-react:
+        specifier: ^0.460.0
+        version: 0.460.0(react@19.2.5)
+      next:
+        specifier: ^15.0.3
+        version: 15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      react:
+        specifier: ^19.0.0-rc-66855b96-20241106
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.0.0-rc-66855b96-20241106
+        version: 19.2.5(react@19.2.5)
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.0
+        version: 1.9.4
+      '@tailwindcss/postcss':
+        specifier: ^4.0.0-beta.4
+        version: 4.2.4
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.17
+      '@types/react':
+        specifier: npm:types-react@19.0.0-rc.1
+        version: types-react@19.0.0-rc.1
+      '@types/react-dom':
+        specifier: npm:types-react-dom@19.0.0-rc.1
+        version: types-react-dom@19.0.0-rc.1
+      tailwindcss:
+        specifier: ^4.0.0-beta.4
+        version: 4.2.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   apps/web:
     dependencies:
       '@egide/api':
