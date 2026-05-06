@@ -27,6 +27,17 @@ dev = [
     "pydantic-ai>=0.0.53",
 ]
 
+# Force CPU-only torch (extractor only needs Docling CPU inference; CUDA wheels
+# are ~5 GB and exhaust GitHub runner disk during docker build).
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
