@@ -5,7 +5,7 @@
 # Per-service go.mod is self-contained; we disable go.work in the
 # builder so the build only sees the validator module.
 
-ARG GO_VERSION=1.23
+ARG GO_VERSION=1.25
 ARG SERVICE=validator
 
 # ─── builder ──────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 # Egide ingestion pipeline — Go (parsers from aegis-platform).
 # Build context: monorepo root.
 
-ARG GO_VERSION=1.23
+ARG GO_VERSION=1.25
 
 # ─── builder ──────────────────────────────────────────────────────────
 FROM golang:${GO_VERSION}-alpine AS build
