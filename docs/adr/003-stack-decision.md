@@ -1,8 +1,9 @@
 # ADR 003 — Stack decision: TypeScript + Go + Python, isolated per service
 
-- **Status**: Accepted
+- **Status**: Accepted (amended 2026-05-05)
 - **Date**: 2026-05-04
 - **Deciders**: solo founder
+- **Amendments**: see "Updates 2026-05-05" at the bottom
 
 ## Context
 
@@ -92,3 +93,43 @@ is single-language, no FFI, communication via HTTP/gRPC/Kafka.
   service's README.
 - We commit to **not adding a fourth language** without an ADR amendment.
   Specifically, no Rust, Elixir, or Java unless there is a demonstrated necessity.
+
+## Updates 2026-05-05
+
+### SHACL is post-MVP
+
+The original ADR implied we would run SHACL validation in `services/validator`
+(Go). After analysis: pyshacl (Python) is the only mature SHACL runtime ; no
+production-grade Go SHACL exists. Two paths were possible:
+
+- Add a Python sidecar = violates the per-service isolation principle.
+- Reimplement SHACL in Go = months of work for negligible benefit at MVP.
+
+We adopt a third path: **SHACL is post-MVP**. The 25 deterministic coherence
+rules are ported as Go validators using PostgreSQL recursive CTE queries
+(see ADR 006). When a customer demands W3C-standard SHACL validation as
+Pro+, we deploy a pyshacl sidecar then.
+
+The skill `.claude/skills/shacl-validation.md` is preserved for reference
+but tagged "post-MVP".
+
+### Auth choice clarified
+
+ADR 003 mentioned Supabase as a possible auth choice ; for the MVP persona
+(technical, sovereign-friendly), we standardize on:
+
+- **Better-Auth** (TypeScript library in `apps/api`) for Community + Pro.
+  Zero external service to operate.
+- **Authentik** (self-hosted FOSS) for Enterprise SAML/OIDC/SCIM.
+- Supabase remains an option for hosters who prefer it ; not the default.
+
+### Container builds
+
+Adopted: **ko** (Go images without Dockerfile, distroless), **distroless**
+base for TS and Python services. Image footprint discipline matters for
+air-gapped Enterprise bundle (Proxmox VM constraint).
+
+### Local cluster dev
+
+Adopted: **k3d** for Helm chart testing. Lightweight, Docker-backed, no
+DigitalOcean / GKE roundtrip in CI.

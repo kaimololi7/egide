@@ -1,8 +1,9 @@
 # ADR 005 — Policy-as-Code multi-target compiler
 
-- **Status**: Accepted
+- **Status**: Accepted (amended 2026-05-05)
 - **Date**: 2026-05-04
 - **Deciders**: solo founder
+- **Amendments**: see "MVP scope reduction 2026-05-05" at the bottom
 
 ## Context
 
@@ -151,3 +152,38 @@ to also support:
   build new generators. This becomes part of `docs/specs/`.
 - The Intent IR is **not** OSCAL. OSCAL is for evidence/SSP serialization; TAI
   is for compilation targets. They coexist.
+
+## MVP scope reduction 2026-05-05
+
+The original "Targets per edition" table promised **Rego + Ansible** in
+Community at MVP. After analysis (priority on quality over breadth, demo
+not pressing, persona is technical and judges quality strictly):
+
+### Updated MVP scope
+
+- **MVP (M1–M3)**: **Rego only**, but exceptionally well-tested.
+  - Full TAI Intent IR coverage.
+  - All `actions_on_violation` semantics.
+  - Test fixtures + `opa eval` validation in CI.
+  - Bundled OPA binary, signed bundles in Pro+.
+  - 5 production-grade compiled Intents at M3 (covering the most common
+    PME/ETI cybersec controls: backup, encryption-at-rest, access logging,
+    MFA enforcement, network egress restrictions).
+- **M3–M4**: **Ansible playbooks** added as second target.
+- **M4–M5**: **CIS Benchmarks** (audit-grade scripts).
+- **M5–M6**: **Kyverno** (Pro+ feature).
+- **M6+**: AWS Config / Azure Policy / Scaleway IAM / Falco.
+- **M9+**: Terraform via CloudFormation Guard or `regula`.
+
+Rationale: the MVP persona (technical, sysadmin/DevOps, ADR 013) judges
+**Rego correctness** more harshly than they reward target breadth. One
+target that works flawlessly beats two that almost work.
+
+The editions matrix (`docs/editions.md`) is updated accordingly.
+
+### Anti-target: HashiCorp Sentinel
+
+Sentinel is BSL (not FOSS-pure) and requires a paid HashiCorp tier.
+We will not ship a Sentinel generator. For Terraform-time policy
+enforcement, we target **CloudFormation Guard** (AWS, Apache 2.0) or
+**`regula`** (Fugue, Apache 2.0) on top of OPA.
