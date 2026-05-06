@@ -2,7 +2,7 @@
 //
 // Starts the Echo HTTP server on port 8003.
 // Composition root: wires generators → use cases → handlers.
-// cf. ADR 005 (Rego only at MVP), ADR 015 (hexagonal).
+// cf. ADR 005 (Rego at MVP, Ansible at M6), ADR 015 (hexagonal).
 package main
 
 import (
@@ -18,6 +18,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/egide/egide/services/compiler/internal/application"
+	"github.com/egide/egide/services/compiler/internal/generators/ansible"
 	"github.com/egide/egide/services/compiler/internal/generators/rego"
 	"github.com/egide/egide/services/compiler/internal/infrastructure/httphandler"
 )
@@ -28,9 +29,11 @@ func main() {
 		port = "8003"
 	}
 
-	// Wire the Rego generator (only target at MVP)
-	regoGen := rego.New()
-	compileUC := application.NewCompileUseCase(regoGen)
+	// Wire generators — Rego (MVP) + Ansible (M6).
+	compileUC := application.NewCompileUseCase(
+		rego.New(),
+		ansible.New(),
+	)
 
 	e := echo.New()
 	e.HideBanner = true
