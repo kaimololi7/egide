@@ -1,0 +1,74 @@
+/*
+ * InstallCommand — install one-liner row. Tokens only.
+ */
+
+.row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 20px 0 24px 0;
+  flex-wrap: wrap;
+}
+
+.code {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--egide-color-border-strong);
+  border-radius: 6px;
+  background: var(--egide-color-surface);
+  font-family: var(--egide-font-mono);
+  font-size: 12.5px;
+  color: var(--egide-color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: all;
+}
+
+.dollar {
+  color: var(--egide-color-text-muted);
+  user-select: none;
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--egide-color-border-strong);
+  border-radius: 6px;
+  background: var(--egide-color-surface-raised);
+  color: var(--egide-color-text-secondary);
+  font-family: var(--egide-font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease-out, color 160ms ease-out;
+}
+
+.copy:hover {
+  border-color: var(--egide-color-accent);
+  color: var(--egide-color-accent);
+}
+
+.copy:focus-visible {
+  outline: 2px solid var(--egide-color-accent);
+  outline-offset: 2px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--egide-color-accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--egide-color-accent);
+  font-family: var(--egide-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
+  "extends": [],
+  "files": {
+    "ignore": [
+      ".next/**",
+      "node_modules/**",
+      "dist/**",
+      "out/**",
+      ".turbo/**",
+      "next-env.d.ts"
+    ]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "formatter": {
+    "enabled": false
+  }
+}

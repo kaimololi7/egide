@@ -1,0 +1,102 @@
+/*
+ * ShowMeTheCode — sticky compiled artifact panel.
+ * Tokens only. ADR 017 compliant.
+ */
+
+.frame {
+  width: 100%;
+  border: 1px solid var(--egide-color-border);
+  border-radius: 6px;
+  background: var(--egide-color-surface);
+  overflow: hidden;
+}
+
+.chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--egide-color-border);
+  background: var(--egide-color-surface-raised);
+  font-family: var(--egide-font-mono);
+  font-size: 11px;
+}
+
+.chromeLabel {
+  color: var(--egide-color-text-primary);
+  font-weight: 500;
+}
+
+.chromeMeta {
+  color: var(--egide-color-text-muted);
+}
+
+.body {
+  margin: 0;
+  padding: 14px 0;
+  font-family: var(--egide-font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--egide-color-text-secondary);
+  overflow-x: auto;
+}
+
+.line {
+  display: flex;
+  padding: 0 14px;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+  border-left: 2px solid transparent;
+}
+
+.lineActive {
+  background: var(--egide-color-accent-muted);
+  border-left-color: var(--egide-color-accent);
+}
+
+.lineNum {
+  display: inline-block;
+  width: 28px;
+  text-align: right;
+  margin-right: 14px;
+  color: var(--egide-color-text-muted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.lineCode {
+  white-space: pre;
+  color: var(--egide-color-text-secondary);
+}
+
+/* Comment lines (start with #) — slight desaturation */
+.line:has(.lineCode):first-letter {
+  /* not reliable across browsers — keep it simple */
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  border-top: 1px solid var(--egide-color-border);
+  background: var(--egide-color-surface-raised);
+  font-family: var(--egide-font-mono);
+  font-size: 11px;
+  color: var(--egide-color-text-secondary);
+}
+
+.footerOk {
+  color: var(--egide-color-accent);
+  font-weight: 500;
+}
+
+.footerSep {
+  color: var(--egide-color-text-muted);
+}
+
+.footerMuted {
+  color: var(--egide-color-text-muted);
+  margin-left: auto;
+}
