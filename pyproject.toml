@@ -2,7 +2,7 @@
 name = "egide-workspace"
 version = "0.0.1"
 description = "Egide — Python services workspace (extractor + agents)"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
 
 [tool.uv.workspace]
 members = [
@@ -11,6 +11,25 @@ members = [
     "agents/compliance",
     "agents/orchestrator",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "bandit>=1.8.0",
+    "pyyaml>=6.0.2",
+    # Needed by agents/compliance and agents/orchestrator tests
+    "pydantic>=2.10.0",
+    "structlog>=24.4.0",
+    "httpx>=0.27.0",
+    "pydantic-ai>=0.0.53",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
