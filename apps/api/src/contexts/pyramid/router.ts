@@ -2,13 +2,16 @@
  * Pyramid bounded context (cf. ADR 015).
  * Owns pyramid graph, versions, mutations, coherence.
  *
- * Status: M3 — create, validate, getProgress implemented.
+ * Status: M3 — create, validate, persist, list, get implemented.
  * Validator proxy calls services/validator on port 8002.
  */
 
-import { z } from "zod";
+import { db, schema } from "@egide/db";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "../../trpc.js";
+import { createHash } from "node:crypto";
+import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
+import { protectedProcedure, router } from "../../trpc.js";
 
 // ── Shared output schemas ─────────────────────────────────────────────────────
 
@@ -31,18 +34,208 @@ const validationIssueSchema = z.object({
 // ── Router ────────────────────────────────────────────────────────────────────
 
 export const pyramidRouter = router({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    ctx.logger.debug("pyramid.list called");
-    // TODO(M4): replace with Drizzle query when pyramid_nodes table is hydrated
-    return { pyramids: [] as z.infer<typeof pyramidSummarySchema>[], total: 0 };
-  }),
+  list: protectedProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(100).default(50),
+          status: z
+            .enum(["draft", "review", "published", "deprecated"])
+            .optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.tenantId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const limit = input?.limit ?? 50;
+      ctx.logger.debug({ limit, status: input?.status }, "pyramid.list");
+
+      const conditions = [eq(schema.pyramids.tenantId, ctx.tenantId)];
+      if (input?.status) {
+        conditions.push(eq(schema.pyramids.status, input.status));
+      }
+
+      const rows = await db
+        .select({
+          id: schema.pyramids.id,
+          tenantId: schema.pyramids.tenantId,
+          slug: schema.pyramids.slug,
+          title: schema.pyramids.title,
+          status: schema.pyramids.status,
+          targetFrameworks: schema.pyramids.targetFrameworks,
+          createdAt: schema.pyramids.createdAt,
+          updatedAt: schema.pyramids.updatedAt,
+        })
+        .from(schema.pyramids)
+        .where(and(...conditions))
+        .orderBy(desc(schema.pyramids.updatedAt))
+        .limit(limit);
+
+      return { pyramids: rows, total: rows.length };
+    }),
 
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      ctx.logger.debug({ id: input.id }, "pyramid.get called");
-      // TODO(M4): fetch from DB
-      return null;
+      if (!ctx.tenantId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      ctx.logger.debug({ id: input.id }, "pyramid.get");
+
+      const [pyramid] = await db
+        .select()
+        .from(schema.pyramids)
+        .where(
+          and(
+            eq(schema.pyramids.id, input.id),
+            eq(schema.pyramids.tenantId, ctx.tenantId),
+          ),
+        );
+      if (!pyramid) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const versions = await db
+        .select({
+          id: schema.pyramidVersions.id,
+          version: schema.pyramidVersions.version,
+          contentHash: schema.pyramidVersions.contentHash,
+          createdAt: schema.pyramidVersions.createdAt,
+        })
+        .from(schema.pyramidVersions)
+        .where(eq(schema.pyramidVersions.pyramidId, input.id))
+        .orderBy(desc(schema.pyramidVersions.createdAt))
+        .limit(20);
+
+      return { pyramid, versions };
+    }),
+
+  /**
+   * Persist a pyramid — called by `agents/orchestrator` _phase_storing
+   * after validation passes. Creates the pyramid row (if first version)
+   * and a new pyramid_versions row carrying the graph snapshot.
+   *
+   * Idempotency: if a version with the same contentHash already exists,
+   * returns it (no duplicate insert).
+   */
+  persist: protectedProcedure
+    .input(
+      z.object({
+        pyramidId: z.string().uuid(),
+        title: z.string().min(1).max(200),
+        slug: z.string().min(1).max(120),
+        targetFrameworks: z.array(z.string()).min(1),
+        graphSnapshot: z.unknown(),
+        status: z
+          .enum(["draft", "review", "published"])
+          .default("draft"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.tenantId || !ctx.session) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
+      const snapshot = JSON.stringify(input.graphSnapshot);
+      const contentHash = `sha256:${createHash("sha256").update(snapshot).digest("hex")}`;
+
+      ctx.logger.info(
+        { pyramidId: input.pyramidId, contentHash },
+        "pyramid.persist",
+      );
+
+      // Idempotency: existing version with same hash → return it
+      const [existingVersion] = await db
+        .select()
+        .from(schema.pyramidVersions)
+        .where(
+          and(
+            eq(schema.pyramidVersions.pyramidId, input.pyramidId),
+            eq(schema.pyramidVersions.contentHash, contentHash),
+          ),
+        );
+      if (existingVersion) {
+        return {
+          pyramidId: input.pyramidId,
+          versionId: existingVersion.id,
+          contentHash,
+          deduped: true,
+        };
+      }
+
+      // Upsert pyramid row
+      const [existingPyramid] = await db
+        .select()
+        .from(schema.pyramids)
+        .where(
+          and(
+            eq(schema.pyramids.id, input.pyramidId),
+            eq(schema.pyramids.tenantId, ctx.tenantId),
+          ),
+        );
+      if (!existingPyramid) {
+        await db.insert(schema.pyramids).values({
+          id: input.pyramidId,
+          tenantId: ctx.tenantId,
+          slug: input.slug,
+          title: input.title,
+          status: input.status,
+          targetFrameworks: input.targetFrameworks,
+        });
+      } else {
+        await db
+          .update(schema.pyramids)
+          .set({
+            title: input.title,
+            status: input.status,
+            targetFrameworks: input.targetFrameworks,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.pyramids.id, input.pyramidId));
+      }
+
+      // Compute next version label (v1, v2, …)
+      const existingVersions = await db
+        .select({ id: schema.pyramidVersions.id })
+        .from(schema.pyramidVersions)
+        .where(eq(schema.pyramidVersions.pyramidId, input.pyramidId));
+      const nextVersion = `v${existingVersions.length + 1}`;
+
+      const [version] = await db
+        .insert(schema.pyramidVersions)
+        .values({
+          pyramidId: input.pyramidId,
+          version: nextVersion,
+          graphSnapshot: input.graphSnapshot,
+          contentHash,
+          createdBy: ctx.session.userId,
+        })
+        .returning();
+
+      // Update current_version_id pointer
+      if (version) {
+        await db
+          .update(schema.pyramids)
+          .set({ currentVersionId: version.id })
+          .where(eq(schema.pyramids.id, input.pyramidId));
+      }
+
+      // Audit log
+      await db.insert(schema.auditLogs).values({
+        tenantId: ctx.tenantId,
+        pyramidId: input.pyramidId,
+        actorId: ctx.session.userId,
+        action: "pyramid.persist",
+        payload: {
+          versionId: version?.id,
+          contentHash,
+          version: nextVersion,
+        },
+      });
+
+      return {
+        pyramidId: input.pyramidId,
+        versionId: version?.id,
+        contentHash,
+        version: nextVersion,
+        deduped: false,
+      };
     }),
 
   /**
