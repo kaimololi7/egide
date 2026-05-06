@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Allow release.yml to run the full gate before tagging artefacts.
+  workflow_call: {}
 
 # Pin GHA actions to commit SHAs (cf. ADR 016).
 # Renovate will keep these up to date.
