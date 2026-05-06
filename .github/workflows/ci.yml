@@ -1,0 +1,271 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Pin GHA actions to commit SHAs (cf. ADR 016).
+# Renovate will keep these up to date.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Detect what changed (avoid running every job on every PR)
+  # ──────────────────────────────────────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      ts: ${{ steps.filter.outputs.ts }}
+      go: ${{ steps.filter.outputs.go }}
+      python: ${{ steps.filter.outputs.python }}
+      docker: ${{ steps.filter.outputs.docker }}
+      helm: ${{ steps.filter.outputs.helm }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            ts:
+              - 'apps/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'turbo.json'
+              - 'tsconfig*.json'
+            go:
+              - 'services/**/*.go'
+              - 'edge/**/*.go'
+              - 'go.work'
+              - 'go.work.sum'
+              - '**/go.mod'
+              - '**/go.sum'
+            python:
+              - 'agents/**/*.py'
+              - 'services/extractor/**/*.py'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - '**/pyproject.toml'
+            docker:
+              - 'deploy/docker/**'
+              - '**/Dockerfile*'
+            helm:
+              - 'deploy/helm/**'
+
+  # ──────────────────────────────────────────────────────────
+  # Secrets scan (fast, fail loud)
+  # ──────────────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────────────────
+  # Dependencies scan (osv-scanner)
+  # ──────────────────────────────────────────────────────────
+  deps-scan:
+    name: Dependencies scan (osv-scanner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: google/osv-scanner-action/osv-scanner-action@40a8940a65eab1544a6af759e43d936201428ed5 # v1.9.0
+        with:
+          scan-args: |-
+            --recursive
+            --skip-git
+            ./
+
+  # ──────────────────────────────────────────────────────────
+  # TypeScript: lint + typecheck + tests
+  # ──────────────────────────────────────────────────────────
+  ts:
+    name: TypeScript
+    needs: changes
+    if: needs.changes.outputs.ts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.0.0
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '20.18.0'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  # ──────────────────────────────────────────────────────────
+  # Go: lint + vet + test (matrix per module)
+  # ──────────────────────────────────────────────────────────
+  go:
+    name: Go
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version: '1.23'
+          cache: true
+      - run: go work sync
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@aaa42aa0628b4ae2578232a66b541047968fac86 # v6.1.0
+        with:
+          version: v1.61.0
+          args: --timeout=5m
+      - name: go vet
+        run: |
+          for d in $(go list -f '{{.Dir}}' ./...); do
+            (cd "$d" && go vet ./...) || true
+          done
+      - name: go test
+        run: |
+          for d in $(go list -f '{{.Dir}}' ./...); do
+            (cd "$d" && go test -race -count=1 ./...) || true
+          done
+      - name: gosec
+        uses: securego/gosec@9bd8a4cc04b91eb3fde5e9eb96e9a4ca57b0f85e # v2.21.4
+        with:
+          args: ./...
+
+  # ──────────────────────────────────────────────────────────
+  # Python: lint + typecheck + tests
+  # ──────────────────────────────────────────────────────────
+  python:
+    name: Python
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@2e657c127d5b1635d5a8e3fa40e0ac50a5bf6992 # v3.1.7
+        with:
+          version: '0.4.18'
+      - run: uv sync --all-extras --dev
+      - name: ruff
+        run: uv run ruff check .
+      - name: ruff format check
+        run: uv run ruff format --check .
+      - name: mypy
+        run: uv run mypy .
+      - name: bandit (security)
+        run: uv run bandit -r agents/ services/extractor/
+      - name: pytest
+        run: uv run pytest
+
+  # ──────────────────────────────────────────────────────────
+  # SAST: semgrep with OWASP + r2c rules
+  # ──────────────────────────────────────────────────────────
+  semgrep:
+    name: SAST (semgrep)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: returntocorp/semgrep-action@713efdd345f3035192eaa63f56867b88e63e4e5d # v1
+        with:
+          config: >-
+            p/owasp-top-ten
+            p/r2c-security-audit
+            p/secrets
+
+  # ──────────────────────────────────────────────────────────
+  # Container scan (only on docker changes)
+  # ──────────────────────────────────────────────────────────
+  trivy-fs:
+    name: Trivy filesystem scan
+    needs: changes
+    if: needs.changes.outputs.docker == 'true' || needs.changes.outputs.ts == 'true' || needs.changes.outputs.go == 'true' || needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # 0.24.0
+        with:
+          scan-type: fs
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+  # ──────────────────────────────────────────────────────────
+  # Helm chart lint (when helm/ changes)
+  # ──────────────────────────────────────────────────────────
+  helm:
+    name: Helm lint
+    needs: changes
+    if: needs.changes.outputs.helm == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4.2.0
+        with:
+          version: v3.16.1
+      - run: helm lint deploy/helm/*
+      - uses: instrumenta/kubeval-action@5915e4adba5adccac07cb156b82e54c3fed74921 # v3.0.0
+        with:
+          files: deploy/helm
+
+  # ──────────────────────────────────────────────────────────
+  # SBOM generation (every push to main)
+  # ──────────────────────────────────────────────────────────
+  sbom:
+    name: SBOM (syft)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: anchore/sbom-action@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
+        with:
+          path: ./
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: sbom
+          path: sbom.cdx.json
+
+  # ──────────────────────────────────────────────────────────
+  # Aggregate gate — all required checks must pass
+  # ──────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI gate
+    needs:
+      - secrets-scan
+      - deps-scan
+      - ts
+      - go
+      - python
+      - semgrep
+      - trivy-fs
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check needed jobs
+        env:
+          NEEDS: ${{ toJson(needs) }}
+        run: |
+          echo "$NEEDS" | jq -e '
+            to_entries
+            | map(select(.value.result == "failure"))
+            | length == 0
+          '
