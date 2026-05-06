@@ -1,0 +1,145 @@
+{{/*
+Default-deny + selective allow NetworkPolicies (cf. ADR 014 §A05).
+
+Strategy:
+  - Default deny ingress + egress for all egide pods.
+  - Allow DNS (kube-system).
+  - Allow ingress to web/api from the ingress controller.
+  - Allow internal cross-component traffic (web → api, api → validator/compiler/extractor).
+  - Allow egress to bundled deps (postgres, redis, nats, minio) by component label.
+
+Customers running managed Postgres / S3 will need to add CIDR-based
+egress rules ; see comments at the end of this file.
+*/}}
+{{- if .Values.networkPolicy.enabled -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" . }}-default-deny
+  labels: {{- include "egide.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "egide.selectorLabels" . | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" . }}-allow-dns
+  labels: {{- include "egide.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "egide.selectorLabels" . | nindent 6 }}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" . }}-allow-ingress-web
+  labels: {{- include "egide.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "egide.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - { protocol: TCP, port: {{ .Values.web.service.port }} }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" . }}-allow-ingress-api
+  labels: {{- include "egide.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "egide.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              {{- include "egide.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: web
+      ports:
+        - { protocol: TCP, port: {{ .Values.api.service.port }} }
+---
+# Backend services (validator/compiler/extractor) only accept traffic from api.
+{{- range $svc := list "validator" "compiler" "extractor" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" $ }}-allow-{{ $svc }}-from-api
+  labels: {{- include "egide.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "egide.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $svc }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "egide.selectorLabels" $ | nindent 14 }}
+              app.kubernetes.io/component: api
+      ports:
+        - { protocol: TCP, port: {{ (index $.Values $svc).service.port }} }
+---
+{{- end }}
+# api egress to validator/compiler/extractor + deps.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "egide.fullname" . }}-allow-api-egress
+  labels: {{- include "egide.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "egide.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  policyTypes: [Egress]
+  egress:
+    # Internal services
+    {{- range $svc := list "validator" "compiler" "extractor" }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "egide.selectorLabels" $ | nindent 14 }}
+              app.kubernetes.io/component: {{ $svc }}
+      ports:
+        - { protocol: TCP, port: {{ (index $.Values $svc).service.port }} }
+    {{- end }}
+    # Bundled deps — allow same-namespace traffic to common ports.
+    # Customers using external managed Postgres/Redis/etc. should add
+    # CIDR-based egress rules below this block.
+    - to:
+        - podSelector: {}
+      ports:
+        - { protocol: TCP, port: 5432 }   # postgres
+        - { protocol: TCP, port: 6379 }   # redis
+        - { protocol: TCP, port: 4222 }   # nats
+        - { protocol: TCP, port: 9000 }   # minio
+        - { protocol: TCP, port: 8123 }   # clickhouse
+{{- end }}

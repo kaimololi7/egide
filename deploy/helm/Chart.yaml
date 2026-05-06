@@ -1,0 +1,68 @@
+apiVersion: v2
+name: egide
+description: |
+  Egide — sovereign GRC platform that turns the human chain of governance
+  (directive → policy → procedure → process → KPI) into a verifiable,
+  executable cascade (Rego, Kyverno, Ansible, CIS).
+
+  This chart deploys the API gateway, the validator + compiler Go services,
+  the Python extractor + AI workers, and the optional bundled NATS
+  JetStream + ClickHouse + PostgreSQL + Redis. External managed services
+  are also supported via the `external.*` keys in values.yaml.
+
+type: application
+
+# Chart version — semver, bumped per chart change.
+version: 0.1.0
+
+# Application version — image tag default if `image.tag` not overridden.
+appVersion: "0.1.0"
+
+home: https://egide.eu
+sources:
+  - https://github.com/egide-grc/egide
+
+maintainers:
+  - name: Egide Team
+    email: hello@egide.eu
+
+keywords:
+  - grc
+  - compliance
+  - iso27001
+  - nis2
+  - dora
+  - opa
+  - rego
+  - sovereign
+  - eu
+
+annotations:
+  category: Security
+  licenses: AGPL-3.0-only
+
+# ── Dependencies ──────────────────────────────────────────────────────────
+# All toggled by their `enabled` key in values.yaml so air-gapped
+# deployments using external managed services can disable them entirely.
+# Pinned to Bitnami OCI charts (mirrored on EU registries when available).
+dependencies:
+  - name: postgresql
+    version: "18.6.2"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: postgresql.enabled
+  - name: redis
+    version: "25.5.0"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: redis.enabled
+  - name: nats
+    version: "1.3.13"
+    repository: "https://nats-io.github.io/k8s/helm/charts/"
+    condition: nats.enabled
+  - name: minio
+    version: "17.0.21"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: minio.enabled
+  - name: clickhouse
+    version: "9.4.4"
+    repository: "oci://registry-1.docker.io/bitnamicharts"
+    condition: clickhouse.enabled

@@ -1,0 +1,3 @@
+{{- if .Values.compiler.enabled -}}
+{{- include "egide.componentDeployment" (dict "name" "compiler" "values" .Values.compiler "root" .) }}
+{{- end }}

@@ -1,0 +1,3 @@
+{{- if .Values.extractor.enabled -}}
+{{- include "egide.componentDeployment" (dict "name" "extractor" "values" .Values.extractor "root" .) }}
+{{- end }}

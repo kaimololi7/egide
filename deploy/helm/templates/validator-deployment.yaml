@@ -1,0 +1,3 @@
+{{- if .Values.validator.enabled -}}
+{{- include "egide.componentDeployment" (dict "name" "validator" "values" .Values.validator "root" .) }}
+{{- end }}
