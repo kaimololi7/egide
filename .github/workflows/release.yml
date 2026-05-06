@@ -79,25 +79,29 @@ jobs:
       - name: Log in to ghcr.io
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
-          registry:.
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute lowercase owner
+        id: owner
+        run: echo "value=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       - name: Build & push (multi-arch)
         id: build
         uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
         with:
-          context: ${{ matrix.component.context }}
+          context: .
           file: ${{ matrix.component.dockerfile }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/egide/${{ matrix.component.name }}:${{ github.ref_name }}
-            ghcr.io/egide/${{ matrix.component.name }}:latest
+            ghcr.io/${{ steps.owner.outputs.value }}/egide-${{ matrix.component.name }}:${{ github.ref_name }}
+            ghcr.io/${{ steps.owner.outputs.value }}/egide-${{ matrix.component.name }}:latest
           provenance: true
           sbom: true
           labels: |
-            org.opencontainers.image.source=https://github.com/egide/egide
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.licenses=AGPL-3.0-only
@@ -108,25 +112,27 @@ jobs:
       - name: Cosign keyless sign
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
+          OWNER: ${{ steps.owner.outputs.value }}
         run: |
           cosign sign --yes \
-            ghcr.io/egide/${{ matrix.component.name }}@${DIGEST}
+            ghcr.io/${OWNER}/egide-${{ matrix.component.name }}@${DIGEST}
 
       - name: Generate CycloneDX SBOM
         uses: anchore/sbom-action@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
         with:
-          image: ghcr.io/egide/${{ matrix.component.name }}@${{ steps.build.outputs.digest }}
+          image: ghcr.io/${{ steps.owner.outputs.value }}/egide-${{ matrix.component.name }}@${{ steps.build.outputs.digest }}
           format: cyclonedx-json
           output-file: sbom-${{ matrix.component.name }}.cdx.json
 
       - name: Cosign attest SBOM
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
+          OWNER: ${{ steps.owner.outputs.value }}
         run: |
           cosign attest --yes \
             --predicate sbom-${{ matrix.component.name }}.cdx.json \
             --type cyclonedx \
-            ghcr.io/egide/${{ matrix.component.name }}@${DIGEST}
+            ghcr.io/${OWNER}/egide-${{ matrix.component.name }}@${DIGEST}
 
       - name: Upload SBOM as artefact
         uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
