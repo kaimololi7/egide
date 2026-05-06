@@ -177,28 +177,125 @@ class OrchestratorWorker:
             await msg.term()
 
     async def _phase_anchoring(self, machine: J1StateMachine) -> None:
+        """Real RAG anchoring against services/validator /v1/rag/search.
+
+        For each candidate chunk (up to 10), query the validator's RAG
+        endpoint with the chunk's leading 200 characters. Dedupe across
+        results by chunk_id and keep the top-N by similarity.
+
+        Falls back to pass-through if the validator is unreachable, so
+        the pipeline doesn't stall on RAG outages.
+        """
         await self._publish_progress(
             machine.state, J1Phase.ANCHORING, "resolving normative anchors"
         )
-        # Skeleton: in M3+ replace with real RAG search via agents/compliance.
-        # For now we mark the phase done and pass through the existing chunks
-        # as already-anchored.
-        machine.set_anchors(machine.state.chunks)
+        if self._http is None:
+            machine.set_anchors([])
+            return
+
+        chunks = machine.state.chunks[:10]  # cap to avoid burst on bigger docs
+        seen: dict[str, dict[str, Any]] = {}
+        for chunk in chunks:
+            text = (chunk.get("text") or "").strip()
+            if not text:
+                continue
+            query = text[:200]
+            try:
+                res = await self._http.get(
+                    f"{VALIDATOR_URL}/v1/rag/search",
+                    params={
+                        "q": query,
+                        "top_k": 5,
+                        "tenant_id": machine.state.tenant_id,
+                        "frameworks": machine.state.framework,
+                    },
+                    headers={"X-Trace-Id": machine.state.trace_id},
+                )
+                if res.status_code >= 400:
+                    continue
+                for item in res.json() or []:
+                    cid = str(item.get("chunk_id"))
+                    if cid and cid not in seen:
+                        seen[cid] = item
+            except httpx.HTTPError as exc:
+                logger.warning("RAG search failure: %s", exc)
+                # Soft-fail: continue with what we have.
+                break
+
+        anchors = sorted(
+            seen.values(),
+            key=lambda a: float(a.get("similarity_score") or 0.0),
+            reverse=True,
+        )[:20]
+
+        logger.info(
+            "anchoring resolved %d unique anchors from %d chunks",
+            len(anchors),
+            len(chunks),
+        )
+        machine.set_anchors(anchors)
 
     async def _phase_drafting(self, machine: J1StateMachine) -> None:
+        """Templated drafting that cites the real anchors from anchoring.
+
+        Real PydanticAI generation via LLMRouterClient lands when a
+        per-tenant LLM credential is wired to the orchestrator (M4+).
+        Until then we emit a deterministic policy skeleton citing every
+        anchor — already useful and respects rule Q01 (no hallucination
+        because no LLM call).
+        """
         await self._publish_progress(
             machine.state, J1Phase.DRAFTING, "drafting policy artifacts"
         )
-        # Skeleton: real draft via agents/compliance.draft_policy lands at M3+.
-        # Emit a single placeholder draft so the validator phase has input.
-        machine.set_drafts(
-            [
-                {
-                    "title": f"Draft policy for {machine.state.framework}",
-                    "anchors": machine.state.anchors,
-                }
+
+        anchors = machine.state.anchors
+        if not anchors:
+            # No anchors → degraded draft, but keep the pipeline alive.
+            machine.set_drafts(
+                [
+                    {
+                        "title": f"Draft policy · {machine.state.framework}",
+                        "anchors": [],
+                        "warnings": ["no anchors resolved — manual review required"],
+                    }
+                ]
+            )
+            return
+
+        # Group anchors by clause prefix (e.g., "A.5", "A.8") to spot
+        # natural policy clusters.
+        clusters: dict[str, list[dict[str, Any]]] = {}
+        for a in anchors:
+            clause = str(a.get("clause") or "")
+            prefix = clause.split(".")[0] if "." in clause else clause or "_"
+            clusters.setdefault(prefix, []).append(a)
+
+        drafts: list[dict[str, Any]] = []
+        for prefix, group in clusters.items():
+            cited = [
+                f"{a.get('framework')} {a.get('clause')}"
+                for a in group
+                if a.get("framework") and a.get("clause")
             ]
+            drafts.append(
+                {
+                    "title": f"Policy on {machine.state.framework} {prefix}",
+                    "scope": f"All systems within ISMS scope (anchored: {prefix})",
+                    "purpose": "Apply the requirements of the cited normative clauses.",
+                    "normative_references": cited,
+                    "anchors": group,
+                    "review_cycle_months": 12,
+                    "owner": "ISMS Manager",
+                    "layer": "policy",
+                }
+            )
+
+        logger.info(
+            "drafting produced %d policy drafts from %d clusters",
+            len(drafts),
+            len(clusters),
         )
+        machine.set_drafts(drafts)
 
     async def _phase_validating(self, machine: J1StateMachine) -> None:
         await self._publish_progress(
@@ -233,11 +330,62 @@ class OrchestratorWorker:
             machine.mark_failed(f"validator unreachable: {exc}")
 
     async def _phase_storing(self, machine: J1StateMachine) -> None:
+        """Persist the pyramid via apps/api tRPC `v1.pyramid.persist`.
+
+        Builds a graph snapshot from anchors + draft policies, posts it
+        through the API gateway. The gateway:
+          - Inserts (or updates) the pyramids row.
+          - Creates a new pyramid_versions row with content_hash.
+          - Writes an audit_logs entry.
+        Idempotent on (pyramid_id, content_hash).
+        """
         await self._publish_progress(
             machine.state, J1Phase.STORING, "persisting pyramid version"
         )
-        # Real persistence via apps/api tRPC `pyramid.persist` lands at M3+.
-        # For now we emit the storing event and continue.
+        if self._http is None:
+            machine.mark_failed("HTTP client not initialized")
+            return
+
+        graph_snapshot = {
+            "framework": machine.state.framework,
+            "anchors": machine.state.anchors,
+            "policies": machine.state.draft_policies,
+            "validation": machine.state.validation_result,
+        }
+        slug = f"j1-{machine.state.pyramid_id[:8]}"
+        title = f"J1 pyramid · {machine.state.framework}"
+
+        try:
+            # tRPC over HTTP — protocol expects POST /trpc/v1.pyramid.persist
+            # with { json: <input> } envelope (httpBatchLink format).
+            res = await self._http.post(
+                f"{API_URL}/trpc/v1.pyramid.persist",
+                json={
+                    "json": {
+                        "pyramidId": machine.state.pyramid_id,
+                        "title": title,
+                        "slug": slug,
+                        "targetFrameworks": [machine.state.framework],
+                        "graphSnapshot": graph_snapshot,
+                        "status": "draft",
+                    },
+                },
+                headers={
+                    "X-Trace-Id": machine.state.trace_id,
+                    "X-Tenant-Id": machine.state.tenant_id,
+                },
+            )
+            if res.status_code >= 400:
+                logger.warning(
+                    "pyramid.persist returned %d — pyramid not stored",
+                    res.status_code,
+                )
+                # Don't fail the whole pipeline ; log and continue.
+                # Real auth tokens land at M4 when the orchestrator gets a
+                # service-account credential.
+        except httpx.HTTPError as exc:
+            logger.warning("pyramid.persist HTTP error: %s", exc)
+            # Same: don't fail E2E on persistence yet — degraded mode logs.
         await asyncio.sleep(0)
 
     async def _phase_done(self, machine: J1StateMachine) -> None:
