@@ -1,0 +1,70 @@
+/*
+ * LiveStatus — full-bleed repo status strip. Tokens only.
+ */
+
+.bar {
+  border-top: 1px solid var(--egide-color-border);
+  border-bottom: 1px solid var(--egide-color-border);
+  background: var(--egide-color-surface);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  font-family: var(--egide-font-mono);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--egide-color-text-secondary);
+}
+
+.icon {
+  color: var(--egide-color-text-muted);
+}
+
+.label {
+  color: var(--egide-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+
+.value {
+  color: var(--egide-color-text-primary);
+}
+
+.muted {
+  color: var(--egide-color-text-muted);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--egide-color-border-strong);
+}
+
+.dotOk {
+  background: var(--egide-color-accent);
+}
+
+.link {
+  margin-left: auto;
+  color: var(--egide-color-text-secondary);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--egide-color-border-strong);
+}
+
+.link:hover {
+  color: var(--egide-color-accent);
+  border-bottom-color: var(--egide-color-accent);
+}

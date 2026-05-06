@@ -1,0 +1,308 @@
+/*
+ * CascadeSVG — animation styles. Tokens only, ADR 017 compliant:
+ * no box-shadow, no gradient, radius ≤ 8px, motion budget ≤ 200ms
+ * per transition step. Loop 8s. Respects prefers-reduced-motion.
+ */
+
+.frame {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  border: 1px solid var(--egide-color-border);
+  border-radius: 6px;
+  background: var(--egide-color-surface);
+  overflow: hidden;
+}
+
+.chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--egide-color-border);
+  background: var(--egide-color-surface-raised);
+  font-family: var(--egide-font-mono);
+  font-size: 11px;
+}
+
+.chromeLabel {
+  color: var(--egide-color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chromeLabel::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--egide-color-accent);
+}
+
+.chromeMeta {
+  color: var(--egide-color-text-muted);
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Rails ─────────────────────────────────────────────────────────── */
+
+.rails {
+  opacity: 0;
+  animation: railsIn 8s ease-out infinite;
+}
+
+.railLabel {
+  font-family: var(--egide-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  fill: var(--egide-color-text-muted);
+}
+
+.railLine {
+  stroke: var(--egide-color-border);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+
+/* ── Node base ─────────────────────────────────────────────────────── */
+
+.node {
+  opacity: 0;
+  transform: translateY(-3px);
+  animation: nodeIn 8s ease-out infinite;
+}
+
+.label {
+  font-family: var(--egide-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--egide-color-text-muted);
+}
+
+.title {
+  font-family: var(--egide-font-ui);
+  font-size: 14px;
+  font-weight: 500;
+  fill: var(--egide-color-text-primary);
+}
+
+.titleMono {
+  font-family: var(--egide-font-mono);
+  font-size: 13px;
+}
+
+.meta {
+  font-family: var(--egide-font-ui);
+  font-size: 11px;
+  fill: var(--egide-color-text-muted);
+}
+
+.dim {
+  fill: var(--egide-color-text-muted);
+  opacity: 0.6;
+}
+
+/* ── Box variants ──────────────────────────────────────────────────── */
+
+.anchorBox,
+.policyBox,
+.procedureBox,
+.intentBox,
+.artifactBox {
+  fill: var(--egide-color-surface-raised);
+  stroke: var(--egide-color-border-strong);
+  stroke-width: 1;
+}
+
+.artifactRego {
+  animation: regoHighlight 8s ease-out infinite;
+}
+
+/* ── Status dot + chip ─────────────────────────────────────────────── */
+
+.statusOk {
+  fill: var(--egide-color-accent);
+}
+
+.chip {
+  fill: var(--egide-color-bg);
+  stroke: var(--egide-color-border-strong);
+  stroke-width: 1;
+}
+
+.chipText {
+  font-family: var(--egide-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  fill: var(--egide-color-text-secondary);
+}
+
+/* ── Arrows ────────────────────────────────────────────────────────── */
+
+.arrow {
+  stroke: var(--egide-color-border-strong);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0;
+  animation: arrowIn 8s ease-out infinite;
+}
+
+.arrowHead {
+  stroke: var(--egide-color-border-strong);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.arrowHeadAccent {
+  stroke: var(--egide-color-accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dashed {
+  stroke-dasharray: 3 3;
+}
+
+/* ── Clickable nodes ──────────────────────────────────────────────── */
+
+.nodeLink {
+  cursor: pointer;
+  outline: none;
+}
+
+.nodeLink:hover .anchorBox,
+.nodeLink:hover .policyBox,
+.nodeLink:hover .procedureBox,
+.nodeLink:hover .intentBox,
+.nodeLink:hover .artifactBox {
+  stroke: var(--egide-color-accent);
+  transition: stroke 160ms ease-out;
+}
+
+.nodeLink:focus-visible .anchorBox,
+.nodeLink:focus-visible .policyBox,
+.nodeLink:focus-visible .procedureBox,
+.nodeLink:focus-visible .intentBox,
+.nodeLink:focus-visible .artifactBox {
+  stroke: var(--egide-color-accent);
+  stroke-width: 2;
+}
+
+.arrowAccent {
+  stroke: var(--egide-color-accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0;
+  animation: arrowIn 8s ease-out infinite;
+}
+
+.edgeLabel {
+  font-family: var(--egide-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  fill: var(--egide-color-text-muted);
+  opacity: 0;
+  animation: arrowIn 8s ease-out infinite;
+  animation-delay: 4.2s;
+}
+
+/* ── Outcome log line ──────────────────────────────────────────────── */
+
+.outcome {
+  opacity: 0;
+  animation: nodeIn 8s ease-out infinite;
+}
+
+.outcomeBox {
+  fill: var(--egide-color-bg);
+  stroke: var(--egide-color-accent);
+  stroke-width: 1;
+}
+
+.outcomeText {
+  fill: var(--egide-color-text-secondary);
+  font-size: 12px;
+}
+
+.outcomeTimestamp {
+  fill: var(--egide-color-text-muted);
+}
+
+.outcomeTag {
+  fill: var(--egide-color-accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
+
+@keyframes railsIn {
+  0%, 2% { opacity: 0; }
+  4%, 95% { opacity: 1; }
+  98%, 100% { opacity: 0; }
+}
+
+@keyframes nodeIn {
+  0%, 4% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  6%, 92% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  98%, 100% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes arrowIn {
+  0%, 4% { opacity: 0; }
+  8%, 92% { opacity: 1; }
+  98%, 100% { opacity: 0; }
+}
+
+@keyframes regoHighlight {
+  0%, 70% {
+    fill: var(--egide-color-surface-raised);
+    stroke: var(--egide-color-border-strong);
+  }
+  73%, 92% {
+    fill: var(--egide-color-accent-muted);
+    stroke: var(--egide-color-accent);
+  }
+  98%, 100% {
+    fill: var(--egide-color-surface-raised);
+    stroke: var(--egide-color-border-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rails,
+  .node,
+  .arrow,
+  .arrowAccent,
+  .edgeLabel,
+  .outcome,
+  .artifactRego {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .artifactRego {
+    fill: var(--egide-color-accent-muted);
+    stroke: var(--egide-color-accent);
+  }
+}
