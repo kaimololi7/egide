@@ -68,7 +68,7 @@ jobs:
           - { name: orchestrator,  dockerfile: agents/orchestrator/Dockerfile }
           - { name: edge-agent,    dockerfile: edge/agent/Dockerfile }
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Free disk space — extractor pulls Docling + ML transitive deps that
       # exceed default GitHub runner disk (~14 GB free of 30 GB). Removing
@@ -160,7 +160,7 @@ jobs:
     needs: ci-gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4.2.0
         with:
           version: v3.15.4
@@ -185,7 +185,7 @@ jobs:
     needs: [images, helm]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
